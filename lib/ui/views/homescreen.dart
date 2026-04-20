@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:klitchen_stock/ui/views/reportScreen.dart' show ManageItemsScreen;
+import 'package:klitchen_stock/ui/views/reportScreen.dart'
+    show ManageItemsScreen;
 import '../../api/api.dart';
 import '../../helper/preferences.dart';
 import '../../widgets/customAlertDialog.dart';
@@ -11,7 +12,7 @@ import 'auth/login.dart';
 import 'getItems.dart';
 
 class ShowItemsScreen extends StatefulWidget {
-  final String Username; // Required parameter
+  final String Username;
   const ShowItemsScreen({required this.Username, Key? key}) : super(key: key);
 
   @override
@@ -20,14 +21,21 @@ class ShowItemsScreen extends StatefulWidget {
 
 class _ShowItemsScreenState extends State<ShowItemsScreen> {
   final _formKey = GlobalKey<FormState>();
-
   final TextEditingController _searchController = TextEditingController();
+
   List<dynamic> _searchResults = [];
   bool _isSearching = false;
   bool _isLoading = false;
-  bool _showSearchBar = false;
 
-  // Handle search logic
+  // Design tokens — clean, minimal palette
+  static const Color kOrange = Color(0xFFFF6B35);
+  static const Color kOrangeLight = Color(0xFFFFF0EA);
+  static const Color kBackground = Color(0xFFF7F8FA);
+  static const Color kSurface = Colors.white;
+  static const Color kBorder = Color(0xFFEEEFF4);
+  static const Color kTextPrimary = Color(0xFF1A1D23);
+  static const Color kTextSecondary = Color(0xFF9599B0);
+
   Future<void> _searchItems(String query) async {
     if (query.isEmpty) {
       setState(() {
@@ -36,544 +44,1457 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
       });
       return;
     }
-
     setState(() => _isLoading = true);
-
     List<dynamic> results = await Api.searchItems(query);
-
     setState(() {
       _isSearching = true;
       _searchResults = results;
       _isLoading = false;
     });
   }
-  void _logout(BuildContext context) async {
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _logout(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
+        return Dialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(20),
           ),
-          title: Row(
-            children: [
-              Icon(Icons.exit_to_app, color: Colors.red,size: 33,),
-              SizedBox(width: 8),
-              Text("Logout", style: TextStyle(fontWeight: FontWeight.bold)),
-            ],
-          ),
-          content: Text("Are you sure you want to log out?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text("Cancel",style: TextStyle(color: Colors.blue,fontWeight: FontWeight.bold),),
-                ],
-              ),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red, // Red button background
-                side: BorderSide(color: Colors.red.shade700, width: 1), // Optional border
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8), // Set border radius to 8
+          elevation: 0,
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.logout_rounded,
+                    color: Colors.red.shade400,
+                    size: 28,
+                  ),
                 ),
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10), // Padding for better UI
-              ),
-              onPressed: () async {
-                Navigator.of(context).pop(); // Close dialog
-                await Preferences.clearAll(); // Clear all stored preferences
-
-                String? token = await Preferences.getToken();
-                print("Token after logout: $token"); // Should print `null`
-
-                Get.offAll(() => LoginScreen()); // Redirect to login screen
-              },
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text("Logout", style: TextStyle(color: Colors.white)),
-                ],
-              ),
+                const SizedBox(height: 16),
+                Text(
+                  'Logout',
+                  style: GoogleFonts.poppins(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: kTextPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Are you sure you want to log out?',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: kTextSecondary,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: kBorder),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: GoogleFonts.poppins(
+                            color: kTextSecondary,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red.shade400,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                        ),
+                        onPressed: () async {
+                          Navigator.of(context).pop();
+                          await Preferences.clearAll();
+                          Get.offAll(() => LoginScreen());
+                        },
+                        child: Text(
+                          'Logout',
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blueGrey[50],
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.orange,
-        title: _showSearchBar
-            ? TextField(
-          controller: _searchController,
-          onChanged: _searchItems,
-          decoration: InputDecoration(
-            hintText: 'Search items...',
-            border: InputBorder.none,
-            hintStyle: GoogleFonts.roboto(color: Colors.white70),
-          ),
-          style: GoogleFonts.roboto(color: Colors.white, fontSize: 18),
-          autofocus: true,
-        )
-            : Text('Kitchen Stock', style: GoogleFonts.roboto(color: Colors.white, fontWeight: FontWeight.w800)),
-        actions: [
-          IconButton(
-            icon: Icon(_showSearchBar ? Icons.close : Icons.search, color: Colors.white),
-            onPressed: () {
-              setState(() {
-                _showSearchBar = !_showSearchBar;
-                if (!_showSearchBar) {
-                  _isSearching = false;
-                  _searchController.clear();
-                  _searchResults.clear();
-                }
-              });
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.list_alt_rounded,color: Colors.white,),
-            onPressed: () {
-             Get.to(ManageItemsScreen());
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.exit_to_app_outlined,color: Colors.white,),
-            onPressed: () => _logout(context), // Call logout function
-          ),
-
-
-        ],
+      backgroundColor: kBackground,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildTopSection(),
+            Expanded(
+              child: _isLoading
+                  ? const Center(
+                      child: SpinKitFadingCircle(color: kOrange, size: 44),
+                    )
+                  : _isSearching
+                  ? _buildSearchResults()
+                  : _buildDefaultItems(),
+            ),
+          ],
+        ),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: _isLoading
-                ? Center(
-              child: SpinKitFadingCircle(color: Colors.orange, size: 50.0),
-            )
-                : _isSearching
-                ? _buildSearchResults()
-                : _buildDefaultItems(),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => showAddCategoryDialog(context),
+        backgroundColor: kOrange,
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Icon(Icons.add,color: Colors.white,),
       ),
     );
   }
 
-  // Search Results ListTile UI
-  Widget _buildSearchResults() {
-    return _searchResults.isEmpty
-        ? Center(
+  Widget _buildTopSection() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFF9A5A), Color(0xFFFF6B35)],
+        ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.orange.withValues(alpha: 0.22),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Image.asset(
-            'assets/nodata.jpg',
-            width: MediaQuery.of(context).size.width * 0.9,
-            height: MediaQuery.of(context).size.height * 0.3, // 30% of screen height
-            fit: BoxFit.cover,
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Kitchen Stock',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Track categories and manage stock faster',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white.withValues(alpha: 0.82),
+                        fontSize: 12.5,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _buildHeaderIconButton(
+                icon: Icons.list_alt_rounded,
+                onTap: () => Get.to(ManageItemsScreen()),
+              ),
+              const SizedBox(width: 8),
+              _buildHeaderIconButton(
+                icon: Icons.logout_rounded,
+                onTap: () => _logout(context),
+              ),
+            ],
           ),
 
-
-          const SizedBox(height: 10),
-          const Text(
-            'No details available for this item',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+          const SizedBox(height: 14),
+          _buildSearchBar(),
         ],
       ),
-    )
-        : ListView.builder(
-      itemCount: _searchResults.length,
-      itemBuilder: (context, index) {
-        var item = _searchResults[index];
-
-        return Card(
-          color: Colors.white,
-          margin: EdgeInsets.all(8),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 4,
-          child: ListTile(
-            title: Text(
-             "${item['engName']} | ${item['gujName']} ",
-              style: GoogleFonts.roboto(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            subtitle: Text(
-              "${item['categoryName']}  |  ${item['categoryGujName']}",
-              style: GoogleFonts.roboto(fontSize: 16, color: Colors.black54),
-            ),
-            trailing: Text(
-              item['location'] ?? '',
-              style: GoogleFonts.roboto(fontSize: 14, fontStyle: FontStyle.italic),
-            ),
-          ),
-        );
-      },
     );
   }
 
-  // Default GridView (Non-search mode)
-  Widget _buildDefaultItems() {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: Api.getItems(), // Load default items
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: SpinKitFadingCircle(color: Colors.orange, size: 50.0),
-          );
-        } else if (snapshot.hasError) {
-          return Center(child: Padding(
-            padding: const EdgeInsets.all(16),
+  Widget _buildHeaderIconButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.18),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Icon(icon, color: Colors.white, size: 22),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroStat({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: Colors.white, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.error,
-                  size: 60,
-                  color: Colors.red,
-                ),
-                const SizedBox(height: 10), // Space between icon and text
                 Text(
-                  'Error: ${snapshot.error}',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red,
+                  title,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white.withValues(alpha: 0.72),
+                    fontSize: 10.5,
+                    height: 1.3,
                   ),
                 ),
               ],
             ),
-          )
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        onChanged: _searchItems,
+        style: GoogleFonts.poppins(fontSize: 14, color: kTextPrimary),
+        decoration: InputDecoration(
+          hintText: 'Search items or categories...',
+          hintStyle: GoogleFonts.poppins(
+            color: kTextSecondary.withValues(alpha: 0.7),
+            fontSize: 13,
+          ),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: kTextSecondary.withValues(alpha: 0.5),
+            size: 20,
+          ),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  onPressed: () {
+                    _searchController.clear();
+                    _searchItems('');
+                  },
+                  icon: Icon(
+                    Icons.cancel_rounded,
+                    color: kTextSecondary.withValues(alpha: 0.5),
+                    size: 18,
+                  ),
+                )
+              : null,
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: const BorderSide(color: kOrange, width: 1.5),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: 16,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchResults() {
+    if (_searchResults.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 84,
+              height: 84,
+              decoration: const BoxDecoration(
+                color: kOrangeLight,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.search_off_rounded,
+                color: kOrange,
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'No results found',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: kTextPrimary,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              'Try a different keyword',
+              style: GoogleFonts.poppins(fontSize: 13, color: kTextSecondary),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+      itemCount: _searchResults.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: kBorder),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: kOrangeLight,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.travel_explore_rounded,
+                    color: kOrange,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Search Results',
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: kTextPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${_searchResults.length} match${_searchResults.length == 1 ? '' : 'es'} found',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: kTextSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return _buildSearchCard(_searchResults[index - 1]);
+      },
+    );
+  }
+
+  Widget _buildSearchCard(dynamic item) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: kSurface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: kBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFFF0EA), Color(0xFFFFE1D6)],
+                ),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: const Icon(
+                Icons.inventory_2_rounded,
+                color: kOrange,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "${item['engName']}",
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14.5,
+                      color: kTextPrimary,
+                    ),
+                  ),
+                  if ((item['gujName'] ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      "${item['gujName']}",
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: kTextSecondary,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 9),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      _buildChip(
+                        Icons.category_rounded,
+                        "${item['categoryName']}",
+                        kOrangeLight,
+                        kOrange,
+                      ),
+                      if ((item['location'] ?? '').isNotEmpty)
+                        _buildChip(
+                          Icons.location_on_rounded,
+                          "${item['location']}",
+                          const Color(0xFFEBF3FF),
+                          const Color(0xFF4A90D9),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChip(
+    IconData icon,
+    String label,
+    Color bgColor,
+    Color iconColor,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: iconColor),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              color: iconColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDefaultItems() {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: Api.getItems(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: SpinKitFadingCircle(color: kOrange, size: 44),
+          );
+        } else if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 76,
+                    height: 76,
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.cloud_off_rounded,
+                      color: Colors.red.shade300,
+                      size: 36,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Something went wrong',
+                    style: GoogleFonts.poppins(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: kTextPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${snapshot.error}',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: kTextSecondary,
+                      height: 1.6,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           );
         } else if (snapshot.hasData) {
           var items = snapshot.data!['data'];
-
-          return GridView.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 0.0,
-              mainAxisSpacing: 0.0,
-              mainAxisExtent: 140,
-              childAspectRatio: 1.5,
-            ),
-            itemCount: items.length,
+          return ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+            itemCount: items.length + 1,
             itemBuilder: (context, index) {
-              var item = items[index];
-
-              return GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => FilteredItemsScreen(
-                        categoryId: item['categoryId'],
-                        categoryName: item['engName'],
-                      ),
-                    ),
-                  );
-                },
-                child: Card(
-                  color: Colors.white,
-                  margin: EdgeInsets.all(8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  elevation: 4,
-                  child: Container(
-                    padding: EdgeInsets.all(15),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              if (index == 0) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 14),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: kBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Text(
-                                item['engName'],
-                                style: GoogleFonts.roboto(fontWeight: FontWeight.bold, fontSize: 18),
+                            Text(
+                              'All Categories',
+                              style: GoogleFonts.poppins(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                                color: kTextPrimary,
                               ),
-                            ),
-                            IconButton(
-                              onPressed: () {
-                              showAddItemDialog(context, item['engName'], item['categoryId'].toString());
-                              },
-                              icon: Icon(Icons.add_circle_outline_outlined, color: Colors.orange, size: 28),
                             ),
                           ],
                         ),
-                        SizedBox(height: 5),
-                        Text(
-                          item['gujName'],
-                          style: GoogleFonts.roboto(fontSize: 16, color: Colors.black54, fontWeight: FontWeight.w500),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
                         ),
-                        SizedBox(height: 5),
-                      ],
-                    ),
+                        decoration: BoxDecoration(
+                          color: kOrangeLight,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          '${items.length}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: kOrange,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              );
+                );
+              }
+
+              return _buildCategoryCard(items[index - 1]);
             },
           );
         } else {
-          return Center(child: Text('No data available'));
+          return Center(
+            child: Text(
+              'No data available',
+              style: GoogleFonts.poppins(fontSize: 14, color: kTextSecondary),
+            ),
+          );
         }
       },
     );
   }
 
-  void showAddItemDialog(BuildContext context, String categoryName, String categoryId) {
+  Widget _buildCategoryCard(dynamic item) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: kSurface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: kBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => FilteredItemsScreen(
+                  categoryId: item['categoryId'],
+                  categoryName: item['engName'],
+                ),
+              ),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(13),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFF0EA), Color(0xFFFFE0D1)],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.grid_view_rounded,
+                        color: kOrange,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item['engName'],
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                              color: kTextPrimary,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                          const SizedBox(height: 1),
+                          Text(
+                            item['gujName'],
+                            style: GoogleFonts.poppins(
+                              fontSize: 11.5,
+                              color: kTextSecondary,
+                              fontWeight: FontWeight.w400,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: kBackground,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.chevron_right_rounded,
+                        color: kTextSecondary,
+                        size: 18,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 9,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFAF6),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFFFEEE4)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.add_circle_outline_rounded,
+                        color: kOrange,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Add item in this category',
+                          style: GoogleFonts.poppins(
+                            fontSize: 11.5,
+                            color: kTextSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => showAddItemDialog(
+                          context,
+                          item['engName'],
+                          item['categoryId'].toString(),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: kOrange,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'Add Item',
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void showAddItemDialog(
+    BuildContext context,
+    String categoryName,
+    String categoryId,
+  ) {
+    final itemFormKey = GlobalKey<FormState>();
     TextEditingController engNameController = TextEditingController();
     TextEditingController gujNameController = TextEditingController();
-    TextEditingController unitController = TextEditingController();
 
-    String? selectedLocation; // Set default value
+    String? selectedLocation;
+    String? selectedUnit;
+
     List<String> locations = [
       "HPYM Kothar",
       "AVD",
       "Sukun Cold Storage",
-      "Amar Cold Storage"
+      "Amar Cold Storage",
     ];
-    String? selectedUnit;
-
     List<String> units = [
-      "Kg", "gm", "mg", "Liter", "ml", "Piece", "Dozen", "Packet", "Box", "Set", "Pair", "Meter", "Yard", "Foot", "Inch", "Bundle"
+      "Kg",
+      "gm",
+      "mg",
+      "Liter",
+      "ml",
+      "Piece",
+      "Dozen",
+      "Packet",
+      "Box",
+      "Set",
+      "Pair",
+      "Meter",
+      "Yard",
+      "Foot",
+      "Inch",
+      "Bundle",
     ];
 
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: Text(
-            "Add New Item",
-            style: GoogleFonts.roboto(fontWeight: FontWeight.bold, fontSize: 18,color: Colors.orange),
-          ),
-          content: Container(
-            width: 400, // Set dialog width
-            child: SingleChildScrollView(
-              child: Form(
-                key: _formKey,
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 24,
+              ),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 440),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Category Display (Read-Only)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: TextFormField(
-
-                        initialValue: categoryName,
-                        readOnly: true,
-                        decoration: InputDecoration(
-                          labelText: "Category",
-                          labelStyle: TextStyle(color: Colors.grey.shade500,fontWeight: FontWeight.w400,fontSize: 14),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),borderSide: BorderSide(color: Colors.orange.withOpacity(0.5))),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),borderSide: BorderSide(color: Colors.orange,width: 2),),
-
-                          fillColor: Colors.grey[200],
-                          filled: true,
+                    // Header
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFFF8C42), Color(0xFFFF6B35)],
+                        ),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
                         ),
                       ),
-                    ),
-
-                    // English Name Input
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: TextFormField(
-                        controller: engNameController,
-                        decoration: InputDecoration(
-                          labelText: "Item Name (English)",
-                          labelStyle: TextStyle(color: Colors.black54,fontWeight: FontWeight.w400,fontSize: 14),
-
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),borderSide: BorderSide(color: Colors.orange.withOpacity(0.5))),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),borderSide: BorderSide(color: Colors.orange,width: 2),),
-
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter a name';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-
-                    // Gujarati Name Input
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: TextFormField(
-                        controller: gujNameController,
-                        decoration: InputDecoration(
-                          labelText: "Item Name (Gujarati)",
-                          labelStyle: TextStyle(color: Colors.black54,fontWeight: FontWeight.w400,fontSize: 14),
-
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),borderSide: BorderSide(color: Colors.orange.withOpacity(0.5))),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),borderSide: BorderSide(color: Colors.orange,width: 2),),
-
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter a name';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-
-                    // Unit Input
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: DropdownButtonFormField2<String>(
-                        value: selectedLocation,
-                        decoration: InputDecoration(
-                          labelText: "Unit",
-                          labelStyle: TextStyle(color: Colors.black54, fontWeight: FontWeight.w400, fontSize: 14),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                          enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.orange.withOpacity(0.5))),
-                          focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.orange, width: 2)),
-                        ),
-                        items: units.map((String unit) {
-                          return DropdownMenuItem<String>(
-                            value: unit,
-                            child: Text(unit, style: TextStyle(color: Colors.black54)),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          selectedLocation = value!;
-                        },
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please select a unit';
-                          }
-                          return null;
-                        },
-                        dropdownStyleData: DropdownStyleData( // Move it here
-                          maxHeight: 150,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.white,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.18),
+                              borderRadius: BorderRadius.circular(11),
+                            ),
+                            child: const Icon(
+                              Icons.add_box_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Add New Item',
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                'Fill in the item details below',
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white.withOpacity(0.75),
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Form
+                    SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
+                      child: Form(
+                        key: itemFormKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _dialogLabel('Category'),
+                            _readOnlyField(categoryName),
+                            const SizedBox(height: 14),
+                            _dialogLabel('Item Name (English)'),
+                            _formField(
+                              engNameController,
+                              'e.g. Tomato',
+                              'Enter English name',
+                            ),
+                            const SizedBox(height: 14),
+                            _dialogLabel('Item Name (Gujarati)'),
+                            _formField(
+                              gujNameController,
+                              'e.g. ટામેટા',
+                              'Enter Gujarati name',
+                            ),
+                            const SizedBox(height: 14),
+                            _dialogLabel('Unit'),
+                            DropdownButtonFormField2<String>(
+                              value: selectedUnit,
+                              decoration: _dropdownDecoration('Select unit'),
+                              items: units
+                                  .map(
+                                    (u) => DropdownMenuItem(
+                                      value: u,
+                                      child: Text(
+                                        u,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (v) =>
+                                  setDialogState(() => selectedUnit = v),
+                              validator: (v) =>
+                                  v == null ? 'Please select a unit' : null,
+                              dropdownStyleData: DropdownStyleData(
+                                maxHeight: 200,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            _dialogLabel('Location'),
+                            DropdownButtonFormField2<String>(
+                              value: selectedLocation,
+                              decoration: _dropdownDecoration(
+                                'Select location',
+                              ),
+                              items: locations
+                                  .map(
+                                    (l) => DropdownMenuItem(
+                                      value: l,
+                                      child: Text(
+                                        l,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (v) =>
+                                  setDialogState(() => selectedLocation = v),
+                              validator: (v) =>
+                                  v == null ? 'Please select a location' : null,
+                              dropdownStyleData: DropdownStyleData(
+                                maxHeight: 200,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-
-                    // Location Dropdown
+                    // Actions
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: DropdownButtonFormField2<String>(
-                        value: selectedLocation,
-                        decoration: InputDecoration(
-                          labelText: "Location",
-                          labelStyle: TextStyle(color: Colors.black54,fontWeight: FontWeight.w400,fontSize: 14),
-
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),borderSide: BorderSide(color: Colors.orange.withOpacity(0.5))),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),borderSide: BorderSide(color: Colors.orange,width: 2),),
-
-                        ),
-                        items: locations.map((String location) {
-                          return DropdownMenuItem<String>(
-                            value: location,
-                            child: Text(location,style: TextStyle(color: Colors.black54),),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          selectedLocation = value!;
-                        },
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please select a location';
-                          }
-                          return null;
-                        },
+                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.pop(context),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: kBorder),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 13,
+                                ),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: GoogleFonts.poppins(
+                                  color: kTextSecondary,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: kOrange,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 13,
+                                ),
+                              ),
+                              onPressed: () async {
+                                if (itemFormKey.currentState!.validate()) {
+                                  try {
+                                    var result = await Api.addItem(
+                                      categoryId,
+                                      engNameController.text,
+                                      gujNameController.text,
+                                      selectedUnit ?? '',
+                                      selectedLocation!,
+                                    );
+                                    if (result['errorStatus'] == false) {
+                                      Navigator.pop(context);
+                                      setState(() {});
+                                      Future.delayed(
+                                        const Duration(milliseconds: 100),
+                                        () {
+                                          CustomAlertDialog.showSuccessDialog(
+                                            context,
+                                            "Item added successfully!",
+                                          );
+                                        },
+                                      );
+                                    }
+                                  } catch (e) {
+                                    Navigator.pop(context);
+                                    Future.delayed(
+                                      const Duration(milliseconds: 100),
+                                      () {
+                                        CustomAlertDialog.showErrorDialog(
+                                          context,
+                                          "Failed to add item.",
+                                        );
+                                      },
+                                    );
+                                  }
+                                }
+                              },
+                              child: Text(
+                                'Add Item',
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-
-
-
                   ],
                 ),
               ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                "Cancel",
-                style: TextStyle(color: Colors.red),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (_formKey.currentState!.validate()) {
-                  // Call the API to add the item
-                  try {
-                    var result = await Api.addItem(
-                      categoryId,
-                      engNameController.text,
-                      gujNameController.text,
-                      unitController.text,
-                      selectedLocation!,
-                    );
-                    if (result['errorStatus'] == false) {
-                      // On successful item addition, clear text fields and show success message
-                      engNameController.clear();
-                      gujNameController.clear();
-                      unitController.clear();
-                      selectedLocation = null;
-
-                      // Ensure the dialog shows after the state is updated and UI is refreshed
-                      Future.delayed(Duration(milliseconds: 100), () {
-                        CustomAlertDialog.showSuccessDialog(context, "Success!");
-                      });
-                      // Refresh the list if needed
-                      setState(() {});
-                    }
-                  } catch (e) {
-                    print("Error: $e");
-                    // Show error message using GetX dialog
-                    Future.delayed(Duration(milliseconds: 100), () {
-                      CustomAlertDialog.showErrorDialog(context, "Error!");
-                    });
-                  }
-                  Navigator.pop(context); // Close the main dialog
-                }
-
-              },
-              child: Text("Add",style: TextStyle(color: Colors.white),),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ],
+            );
+          },
         );
       },
     );
   }
 
+  Widget _dialogLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(
+        label,
+        style: GoogleFonts.poppins(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: kTextSecondary,
+        ),
+      ),
+    );
+  }
+
+  Widget _readOnlyField(String value) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 13),
+      decoration: BoxDecoration(
+        color: kBackground,
+        borderRadius: BorderRadius.circular(11),
+        border: Border.all(color: kBorder),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.category_rounded, size: 15, color: kOrange),
+          const SizedBox(width: 8),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: kTextSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _formField(
+    TextEditingController controller,
+    String hint,
+    String errorMsg,
+  ) {
+    return TextFormField(
+      controller: controller,
+      style: GoogleFonts.poppins(fontSize: 13, color: kTextPrimary),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: GoogleFonts.poppins(
+          color: kTextSecondary.withOpacity(0.6),
+          fontSize: 12.5,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 13,
+          vertical: 13,
+        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(11)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(11),
+          borderSide: const BorderSide(color: kBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(11),
+          borderSide: const BorderSide(color: kOrange, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(11),
+          borderSide: BorderSide(color: Colors.red.shade300),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(11),
+          borderSide: BorderSide(color: Colors.red.shade300, width: 1.5),
+        ),
+        filled: true,
+        fillColor: kBackground.withOpacity(0.5),
+      ),
+      validator: (v) => (v == null || v.isEmpty) ? errorMsg : null,
+    );
+  }
+
+  InputDecoration _dropdownDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: GoogleFonts.poppins(
+        color: kTextSecondary.withOpacity(0.6),
+        fontSize: 12.5,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 13),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(11)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(11),
+        borderSide: const BorderSide(color: kBorder),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(11),
+        borderSide: const BorderSide(color: kOrange, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(11),
+        borderSide: BorderSide(color: Colors.red.shade300),
+      ),
+      filled: true,
+      fillColor: kBackground.withOpacity(0.5),
+    );
+  }
+
+  void showAddCategoryDialog(BuildContext context) {
+    final catFormKey = GlobalKey<FormState>();
+    TextEditingController engNameController = TextEditingController();
+    TextEditingController gujNameController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 440),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFFF8C42), Color(0xFFFF6B35)],
+                    ),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                        child: const Icon(
+                          Icons.category_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Add New Category',
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            'Enter name in both languages',
+                            style: GoogleFonts.poppins(
+                              color: Colors.white.withOpacity(0.75),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
+                  child: Form(
+                    key: catFormKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _dialogLabel('Category Name (English)'),
+                        _formField(
+                          engNameController,
+                          'e.g. Vegetables',
+                          'Please enter category name',
+                        ),
+                        const SizedBox(height: 14),
+                        _dialogLabel('Category Name (Gujarati)'),
+                        _formField(
+                          gujNameController,
+                          'e.g. શાકભાજી',
+                          'Please enter category name',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(dialogContext),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: kBorder),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                          ),
+                          child: Text(
+                            'Cancel',
+                            style: GoogleFonts.poppins(
+                              color: kTextSecondary,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kOrange,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                          ),
+                          onPressed: () async {
+                            if (catFormKey.currentState!.validate()) {
+                              try {
+                                var result = await Api.addCategory(
+                                  engNameController.text,
+                                  gujNameController.text,
+                                );
+                                if (result['errorStatus'] == false) {
+                                  if (!mounted) return;
+                                  Navigator.pop(dialogContext);
+                                  setState(() {});
+                                  Future.delayed(
+                                    const Duration(milliseconds: 100),
+                                    () {
+                                      CustomAlertDialog.showSuccessDialog(
+                                        context,
+                                        "Category added successfully!",
+                                      );
+                                    },
+                                  );
+                                }
+                              } catch (e) {
+                                if (!mounted) return;
+                                Navigator.pop(dialogContext);
+                                Future.delayed(
+                                  const Duration(milliseconds: 100),
+                                  () {
+                                    CustomAlertDialog.showErrorDialog(
+                                      context,
+                                      "Failed to add category.",
+                                    );
+                                  },
+                                );
+                              }
+                            }
+                          },
+                          child: Text(
+                            'Add Category',
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }

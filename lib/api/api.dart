@@ -1,14 +1,11 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 import 'package:http/http.dart' as http;
 import 'package:klitchen_stock/helper/preferences.dart';
 import 'package:klitchen_stock/utils/api_urls.dart';
 import 'dart:developer' as log;
-
-import '../ui/views/homescreen.dart';
 class Api {
   static Dio? client;
 
@@ -257,6 +254,46 @@ class Api {
       }
     } catch (error) {
       throw Exception('Error occurred during adding item: $error');
+    }
+  }
+
+  static Future<Map<String, dynamic>> addCategory(
+      String engName, String gujName) async {
+    String? username = await Preferences.getUserName();
+
+    try {
+      var requestBody = {
+        "table": "category",
+        "engName": engName,
+        "gujName": gujName,
+        "createdBy": username,
+      };
+
+      final response = await http.post(
+        Uri.parse('http://27.116.52.24:8060/insertData'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> responseData = json.decode(response.body);
+
+        if (responseData['errorStatus'] == false) {
+          return {
+            'errorStatus': false,
+            'data': responseData['data'],
+          };
+        } else {
+          throw Exception('Error occurred: ${responseData['message']}');
+        }
+      } else {
+        throw Exception(
+            'Failed to add category. Status code: ${response.statusCode}');
+      }
+    } catch (error) {
+      throw Exception('Error occurred during adding category: $error');
     }
   }
 
