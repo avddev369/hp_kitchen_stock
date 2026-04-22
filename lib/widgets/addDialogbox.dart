@@ -99,10 +99,15 @@ Future<void> showAddItemDialog(BuildContext context, int itemId, int categoryId,
   TextEditingController sevakNoController = TextEditingController();
   TextEditingController ExpiryDateController = TextEditingController();
 
-
-
   String? selectedType;
+  String? selectedGodown;
   bool showSevakFields = false;
+  final List<String> godownOptions = [
+    "HPYM Kothar",
+    "AVD",
+    "Sukun Cold Storage",
+    "Amar Cold Storage"
+  ];
 
   showDialog(
     context: context,
@@ -132,6 +137,17 @@ Future<void> showAddItemDialog(BuildContext context, int itemId, int categoryId,
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text("Please select a Type!"),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              setState(() => isLoading = false);
+              return;
+            }
+
+            if (selectedGodown == null || selectedGodown!.trim().isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Please select a Godown!"),
                   backgroundColor: Colors.red,
                 ),
               );
@@ -184,6 +200,7 @@ Future<void> showAddItemDialog(BuildContext context, int itemId, int categoryId,
               "type": selectedType!,
               "sevakName": showSevakFields ? sevakNameController.text.trim() : "",
               "sevakNo": showSevakFields ? sevakNoController.text.trim() : "",
+              "location": selectedGodown,
               "itemTo": "Add",
               "expiryDate": ExpiryDateController.text.trim(),
               "createdBy": 1
@@ -323,6 +340,17 @@ Future<void> showAddItemDialog(BuildContext context, int itemId, int categoryId,
                         setState(() {
                           selectedType = value;
                           showSevakFields = value == "Seva";
+                        });
+                      },
+                    ),
+                    _buildHeader("Godown"),
+                    buildDropdown(
+                      "Godown",
+                      godownOptions,
+                      selectedGodown,
+                      (value) {
+                        setState(() {
+                          selectedGodown = value;
                         });
                       },
                     ),

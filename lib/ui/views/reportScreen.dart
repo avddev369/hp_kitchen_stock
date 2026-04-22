@@ -1,15 +1,10 @@
-import 'package:dotted_line/dotted_line.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'dart:convert';
-import 'package:intl/intl.dart';
 
 import '../../widgets/filterDialogueBox.dart';
-import '../../widgets/filterScreen.dart';
 
 class ManageItemsScreen extends StatefulWidget {
   const ManageItemsScreen({Key? key}) : super(key: key);
@@ -19,6 +14,14 @@ class ManageItemsScreen extends StatefulWidget {
 }
 
 class _ManageItemsScreenState extends State<ManageItemsScreen> {
+  static const Color kOrange = Color(0xFFFF6B35);
+  static const Color kOrangeLight = Color(0xFFFFF0EA);
+  static const Color kBackground = Color(0xFFF7F8FA);
+  static const Color kSurface = Colors.white;
+  static const Color kBorder = Color(0xFFEEEFF4);
+  static const Color kTextPrimary = Color(0xFF1A1D23);
+  static const Color kTextSecondary = Color(0xFF9599B0);
+
   String? selectedAction = "add";
   List<dynamic> items = [];
   List<dynamic> filteredItems = []; // For search filtering
@@ -396,20 +399,32 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
   }
 
   @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.orange,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.white,
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back_rounded, color: kTextPrimary),
+        ),
         title: isSearching
             ? TextField(
                 controller: searchController,
-                decoration: const InputDecoration(
+                autofocus: true,
+                decoration: InputDecoration(
                   hintText: "Search Item name wise...",
                   border: InputBorder.none,
-                  hintStyle: TextStyle(color: Colors.white70),
+                  hintStyle: TextStyle(color: kTextSecondary),
                 ),
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: kTextPrimary),
                 onChanged: (query) {
                   setState(() {
                     filteredItems = items.where((item) {
@@ -421,15 +436,19 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                   });
                 },
               )
-            : const Text(
+            : Text(
                 "Reports",
-                style:
-                    TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: kTextPrimary,
+                ),
               ),
         actions: [
           IconButton(
-            icon: Icon(isSearching ? Icons.close : Icons.search,
-                color: Colors.white),
+            icon: Icon(
+              isSearching ? Icons.close_rounded : Icons.search_rounded,
+              color: kTextPrimary,
+            ),
             onPressed: () {
               setState(() {
                 isSearching = !isSearching;
@@ -442,8 +461,8 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
           ),
           IconButton(
             icon: Icon(
-              isFilterApplied ? Icons.close : Icons.filter_alt_outlined,
-              color: Colors.white,
+              isFilterApplied ? Icons.close_rounded : Icons.filter_alt_outlined,
+              color: isFilterApplied ? kOrange : kTextPrimary,
             ),
             onPressed: () {
               if (isFilterApplied) {
@@ -459,62 +478,26 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
           ),
         ],
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: kBackground,
       body: Column(
         children: [
-          if (selectedFilters.isEmpty &&
-              !isSearching) // Hide radio buttons when filters or search are applied
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.orange,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: _buildRadioButton("add", "Add"),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 20),
-                      child: _buildRadioButton("remove", "Remove"),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+            child: _buildTopControls(),
+          ),
           Expanded(
             child: isLoading
-                ? const Center(child: SpinKitFadingCircle(color: Colors.orange))
-                : (filteredItems == null || filteredItems.isEmpty)
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.asset(
-                              'assets/nodata.jpg',
-                              width: MediaQuery.of(context).size.width * 0.9,
-                              height: MediaQuery.of(context).size.height *
-                                  0.3, // 30% of screen height
-                              fit: BoxFit.cover,
-                            ),
-                            const SizedBox(height: 10),
-                            const Text(
-                              'No details available for this item',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      )
+                ? const Center(child: SpinKitFadingCircle(color: kOrange))
+                : filteredItems.isEmpty
+                    ? _buildEmptyState()
                     : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        itemCount: filteredItems!.length,
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                        itemCount: filteredItems.length + 1,
                         itemBuilder: (context, index) {
-                          var item = filteredItems![index];
+                          if (index == 0) {
+                            return _buildSummaryCard();
+                          }
+                          var item = filteredItems[index - 1];
                           return _buildItemCard(item);
                         },
                       ),
@@ -524,23 +507,157 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
     );
   }
 
-  Widget _buildRadioButton(String value, String label) {
-    return Row(
+  Widget _buildTopControls() {
+    return Column(
       children: [
-        Radio<String>(
-          value: value,
-          groupValue: selectedAction,
-          activeColor: Colors.white,
-          onChanged: (value) {
-            setState(() {
-              selectedAction = value;
-              _filterItems(); // Apply filtering & radio together
-            });
-          },
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: kSurface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: kBorder),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Stock Activity',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: kTextPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      isFilterApplied
+                          ? 'Showing filtered report results'
+                          : 'Browse add and remove history',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: kTextSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: kOrangeLight,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  '${filteredItems.length}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: kOrange,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        Text(label,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        if (selectedFilters.isEmpty && !isSearching) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: kSurface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: kBorder),
+            ),
+            child: Row(
+              children: [
+                Expanded(child: _buildRadioButton("add", "Add")),
+                const SizedBox(width: 8),
+                Expanded(child: _buildRadioButton("remove", "Remove")),
+              ],
+            ),
+          ),
+        ],
       ],
+    );
+  }
+
+  Widget _buildSummaryCard() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: kSurface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: kBorder),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: kOrangeLight,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.assessment_rounded, color: kOrange, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              selectedAction == 'add'
+                  ? 'Showing added stock records'
+                  : 'Showing removed stock records',
+              style: const TextStyle(
+                fontSize: 13,
+                color: kTextSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRadioButton(String value, String label) {
+    final isSelected = selectedAction == value;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedAction = value;
+          _filterItems();
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? kOrange : kBackground,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              value == 'add' ? Icons.add_circle_outline_rounded : Icons.remove_circle_outline_rounded,
+              size: 18,
+              color: isSelected ? Colors.white : kTextSecondary,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: isSelected ? Colors.white : kTextPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -557,71 +674,69 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade300),
+        color: kSurface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: kBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black12,
-            blurRadius: 6,
-            spreadRadius: 2,
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
-      child: Column(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
         children: [
-          // 🔹 Header
           Row(
             children: [
               Expanded(
                 child: Text(
                   item["itemName"] ?? "No Name",
                   style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: kTextPrimary,
+                  ),
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: item["action"] == "add"
-                      ? Colors.green.withOpacity(0.9)
-                      : Colors.red,
-                  borderRadius: BorderRadius.circular(6),
+                      ? const Color(0xFF22A45D)
+                      : const Color(0xFFE05050),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   item["action"] == "add" ? "Add" : "Remove",
                   style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold),
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          const DottedLine(
-            dashLength: 3,
-            dashGapLength: 5,
-            dashColor: Colors.black54,
-            direction: Axis.horizontal,
-          ),
-          const SizedBox(height: 10),
-
-          // 🔹 Content
+          const SizedBox(height: 12),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _infoText("Category:", item["categoryName"]),
+                    _infoText("Category", item["categoryName"]),
                     const SizedBox(height: 10),
-                    _infoText("Category (Guj):", item["categoryGujName"]),
+                    _infoText("Category (Guj)", item["categoryGujName"]),
                     const SizedBox(height: 10),
-                    _infoText("Location:", item["location"]),
+                    _infoText("Location", item["location"]),
                     const SizedBox(height: 10),
                     _infoText(
-                        "Sevak Name:",
+                        "Sevak Name",
                         item["sevakName"]?.isNotEmpty == true
                             ? item["sevakName"]
                             : "N/A"),
@@ -632,24 +747,23 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _infoText("Qty:", "${item["qty"]} ${item["unit"]}"),
+                    _infoText("Qty", "${item["qty"]} ${item["unit"]}"),
                     const SizedBox(height: 10),
-                    _infoText("Type:", item["type"]),
+                    _infoText("Type", item["type"]),
                     const SizedBox(height: 10),
                     _infoText(
-                        "Sevak No:",
+                        "Sevak No",
                         item["sevakNo"]?.isNotEmpty == true
                             ? item["sevakNo"]
                             : "N/A"),
                     const SizedBox(height: 10),
-                    _infoText("Date:", item["date"].toString().split("T")[0]),
+                    _infoText("Date", item["date"].toString().split("T")[0]),
                   ],
                 ),
               ),
             ],
           ),
 
-          // 🔻 Expiry date container at bottom right
           const SizedBox(height: 12),
           Align(
             alignment: Alignment.bottomRight,
@@ -669,32 +783,81 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 13,
+                  fontSize: 11.5,
                 ),
               ),
             ),
           ),
         ],
       ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 82,
+              height: 82,
+              decoration: const BoxDecoration(
+                color: kOrangeLight,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.assessment_outlined,
+                color: kOrange,
+                size: 38,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'No report data available',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: kTextPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _infoText(String label, String? value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: RichText(
-        text: TextSpan(
-          text: "$label ",
-          style: const TextStyle(
-              fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
-          children: [
-            TextSpan(
-              text: value ?? "N/A",
-              style: const TextStyle(
-                  fontWeight: FontWeight.normal, color: Colors.black87),
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFAF6),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFFEEE4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: kTextSecondary,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value ?? "N/A",
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: kTextPrimary,
+            ),
+          ),
+        ],
       ),
     );
   }

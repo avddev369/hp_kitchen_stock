@@ -1,4 +1,3 @@
-import 'package:dotted_line/dotted_line.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,6 +17,14 @@ class ItemDetailScreen extends StatefulWidget {
 }
 
 class _ItemDetailScreenState extends State<ItemDetailScreen> {
+  static const Color kOrange = Color(0xFFFF6B35);
+  static const Color kOrangeLight = Color(0xFFFFF0EA);
+  static const Color kBackground = Color(0xFFF7F8FA);
+  static const Color kSurface = Colors.white;
+  static const Color kBorder = Color(0xFFEEEFF4);
+  static const Color kTextPrimary = Color(0xFF1A1D23);
+  static const Color kTextSecondary = Color(0xFF9599B0);
+
   late Future<Map<String, dynamic>> futureItemDetails;
   TextEditingController searchController = TextEditingController();
   List<dynamic> allItems = [];
@@ -58,31 +65,50 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
 
   @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-     // backgroundColor: Colors.white,
+      backgroundColor: kBackground,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.white,
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back_rounded, color: kTextPrimary),
+        ),
         title: isSearching
             ? TextField(
-          controller: searchController,
-          style: GoogleFonts.poppins(color: Colors.white),
-          decoration: InputDecoration(
-            hintText: 'Search items...',
-            hintStyle: GoogleFonts.poppins(color: Colors.white70),
-            border: InputBorder.none,
-          ),
-          onChanged: _searchItems,
-        )
+                controller: searchController,
+                autofocus: true,
+                style: GoogleFonts.poppins(color: kTextPrimary),
+                decoration: InputDecoration(
+                  hintText: 'Search history...',
+                  hintStyle: GoogleFonts.poppins(color: kTextSecondary),
+                  border: InputBorder.none,
+                ),
+                onChanged: _searchItems,
+              )
             : Text(
-          widget.itemName,
-          style: GoogleFonts.roboto(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white),
-        ),
-        backgroundColor: Colors.orange,
-        automaticallyImplyLeading: false,
+                widget.itemName,
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                  color: kTextPrimary,
+                ),
+              ),
         actions: [
           IconButton(
-            icon: Icon(isSearching ? Icons.close : Icons.search, color: Colors.white),
+            icon: Icon(
+              isSearching ? Icons.close_rounded : Icons.search_rounded,
+              color: kTextPrimary,
+            ),
             onPressed: () {
               setState(() {
                 isSearching = !isSearching;
@@ -101,283 +127,361 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
               child: SpinKitFadingCircle(
-                color: Colors.orange,
-                size: 50.0,
+                color: kOrange,
+                size: 46.0,
               ),
             );
           } else if (snapshot.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'assets/nodata.jpg',
-                    width: MediaQuery.of(context).size.width * 0.9,
-                    height: MediaQuery.of(context).size.height * 0.3, // 30% of screen height
-                    fit: BoxFit.cover,
-                  ),
-
-
-                  const SizedBox(height: 10),
-                  const Text(
-                    'No details available for this item',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            );
+            return _buildEmptyState('No details available for this item');
           } else if (snapshot.hasData) {
             allItems = snapshot.data?['data'] ?? [];
-            filteredItems = filteredItems.isEmpty && searchController.text.isEmpty ?  List.from(allItems): filteredItems;
+            filteredItems = filteredItems.isEmpty && searchController.text.isEmpty
+                ? List.from(allItems)
+                : filteredItems;
 
             if (filteredItems.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/nodata.jpg',
-                      width: MediaQuery.of(context).size.width * 0.9,
-                      height: MediaQuery.of(context).size.height * 0.3, // 30% of screen height
-                      fit: BoxFit.cover,
-                    ),
-
-
-                    const SizedBox(height: 10),
-                    const Text(
-                      'No details available for this item',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
+              return _buildEmptyState(
+                searchController.text.isEmpty
+                    ? 'No details available for this item'
+                    : 'No matching history found',
               );
             }
 
-            return Column(
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: ListView.builder(
-                      itemCount: filteredItems.length,
-                      itemBuilder: (context, index) {
-                        var item = filteredItems[index];
-                        String itemTo = item['itemTo']?.toString().toLowerCase() ?? '';
+            return ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              itemCount: filteredItems.length + 1,
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return _buildSummaryCard();
+                }
 
-                        return Card(
-                          color: Colors.white,
-                          margin: const EdgeInsets.symmetric(vertical: 8.0),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 4,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            item['itemName'] ?? 'No Name',
-                                            style: GoogleFonts.roboto(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: itemTo == "add"
-                                                ? Colors.green.withOpacity(0.9)
-                                                : Colors.red,
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: Text(
-                                            itemTo == "add" ? "Add" : "Remove",
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 10),
-                                    const DottedLine(
-                                      dashLength: 3,
-                                      dashGapLength: 5,
-                                      dashColor: Colors.black54,
-                                      direction: Axis.horizontal,
-                                    ),
-                                    const SizedBox(height: 10),
-                                    Flex(
-                                      direction: Axis.horizontal,
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        _buildInfoText('Category', item['categoryName']),
-                                        _buildInfoText('Location', item['location']),
-                                      ],
-                                    ),
-                                    Flex(
-                                      direction: Axis.horizontal,
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        _buildInfoText('Quantity', "${item['qty'] ?? ''} ${item['unit'] ?? ''}"),
-                                        _buildInfoText('Date', item['date']),
-                                      ],
-                                    ),
-                                    Flex(
-                                      direction: Axis.horizontal,
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        _buildInfoText('Item Type', item['type']),
-                                        _buildInfoText('Sevak Name', item['sevakName']),
-                                      ],
-                                    ),
-                                    Flex(
-                                      direction: Axis.horizontal,
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        _buildInfoText('Sevak No', item['sevakNo']),
-                                        _buildItemToText('Item To', item['itemTo'], itemTo),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              // 🔻 Expiry Date Box - Full width at bottom
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  Align(
-                                    alignment: Alignment.bottomRight,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 14),
-                                      decoration: BoxDecoration(
-                                        gradient: const LinearGradient(
-                                          colors: [Colors.deepOrange, Colors.orange],
-
-                                          // colors: [Color(0xFF757575), Color(0xFF212121)], // Sleek gray to black
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
-                                        borderRadius: const BorderRadius.only(
-                                          bottomRight: Radius.circular(12),
-                                          topLeft: Radius.circular(10),
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.orange.withOpacity(0.3),
-                                            offset: const Offset(2, 2),
-                                            blurRadius: 5,
-                                          ),
-                                        ],
-                                      ),
-                                      child:  Text(
-                                        "Expiry Dt : ${item['expiryDate'] != null && item['expiryDate'].toString().isNotEmpty
-                                            ? DateFormat('dd-MM-yyyy').format(DateTime.parse(item['expiryDate']))
-                                            : 'N/A'}",
-                                        textAlign: TextAlign.right,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
-                                      )
-
-
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        )
-
-                        ;
-                      },
-                    ),
-                  ),
-                ),
-                // Container(
-                //   padding: const EdgeInsets.all(16),
-                //   decoration: BoxDecoration(
-                //     color: Colors.orange,
-                //     boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
-                //   ),
-                //   child: Row(
-                //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                //     children: [
-                //       Text(
-                //         "Total Quantity:",
-                //         style: GoogleFonts.poppins(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold),
-                //       ),
-                //       Text(
-                //         "${widget.qty}",
-                //         style: GoogleFonts.poppins(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold),
-                //       ),
-                //     ],
-                //   ),
-                // ),
-              ],
+                final item = filteredItems[index - 1];
+                final itemTo = item['itemTo']?.toString().toLowerCase() ?? '';
+                return _buildHistoryCard(item, itemTo);
+              },
             );
           } else {
-            return const Center(child: Text('No details available for this item'));
+            return _buildEmptyState('No details available for this item');
           }
         },
       ),
     );
   }
 
-  Widget _buildInfoText(String title, dynamic value) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: '$title: ',
-                style: GoogleFonts.poppins(fontSize: 12, color: Colors.black, fontWeight: FontWeight.w600),
-              ),
-              TextSpan(
-                text: '${value ?? 'N/A'}',
-                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.normal, color: Colors.black),
-              ),
-            ],
+  Widget _buildSummaryCard() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: kSurface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: kBorder),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Item History',
+                  style: GoogleFonts.poppins(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: kTextPrimary,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  searchController.text.isEmpty
+                      ? 'View add and remove history for this item'
+                      : 'Showing filtered history results',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.5,
+                    color: kTextSecondary,
+                  ),
+                ),
+              ],
+            ),
           ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: kOrangeLight,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              '${filteredItems.length}',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: kOrange,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryCard(dynamic item, String itemTo) {
+    final isAdd = itemTo == 'add';
+    final badgeColor = isAdd ? const Color(0xFF22A45D) : const Color(0xFFE05050);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: kSurface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: kBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    item['itemName'] ?? 'No Name',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14.5,
+                      color: kTextPrimary,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: badgeColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    isAdd ? 'Add' : 'Remove',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildDetailTile(
+                    'Category',
+                    item['categoryName'],
+                    Icons.category_rounded,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildDetailTile(
+                    'Location',
+                    item['location'],
+                    Icons.location_on_outlined,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildDetailTile(
+                    'Quantity',
+                    "${item['qty'] ?? ''} ${item['unit'] ?? ''}",
+                    Icons.scale_rounded,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildDetailTile(
+                    'Date',
+                    item['date'],
+                    Icons.calendar_month_rounded,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildDetailTile(
+                    'Item Type',
+                    item['type'],
+                    Icons.inventory_2_outlined,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildDetailTile(
+                    'Sevak Name',
+                    item['sevakName'],
+                    Icons.person_outline_rounded,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildDetailTile(
+                    'Sevak No',
+                    item['sevakNo'],
+                    Icons.phone_outlined,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildDetailTile(
+                    'Item To',
+                    item['itemTo'],
+                    isAdd ? Icons.add_circle_outline_rounded : Icons.remove_circle_outline_rounded,
+                    valueColor: badgeColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: kOrangeLight,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  "Expiry: ${_formatExpiryDate(item['expiryDate'])}",
+                  style: GoogleFonts.poppins(
+                    color: kOrange,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildItemToText(String title, dynamic value, String itemTo) {
-    Color textColor = itemTo == 'add' ? Colors.green : (itemTo == 'remove' ? Colors.red : Colors.black);
-    FontWeight fontWeight = itemTo == 'add' || itemTo == 'remove' ? FontWeight.bold : FontWeight.normal;
-
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: '$title: ',
-                style: GoogleFonts.poppins(fontSize: 12, color: Colors.black, fontWeight: FontWeight.w600),
-              ),
-              TextSpan(
-                text: '${value ?? 'N/A'}',
-                style: GoogleFonts.poppins(fontSize: 12, fontWeight: fontWeight, color: textColor),
-              ),
-            ],
+  Widget _buildDetailTile(
+    String title,
+    dynamic value,
+    IconData icon, {
+    Color valueColor = kTextPrimary,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFAF6),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFFEEE4)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: kOrangeLight,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 16, color: kOrange),
           ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: kTextSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${value ?? 'N/A'}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: valueColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatExpiryDate(dynamic value) {
+    if (value == null || value.toString().isEmpty) {
+      return 'N/A';
+    }
+
+    try {
+      return DateFormat('dd-MM-yyyy').format(DateTime.parse(value.toString()));
+    } catch (_) {
+      return value.toString();
+    }
+  }
+
+  Widget _buildEmptyState(String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 82,
+              height: 82,
+              decoration: const BoxDecoration(
+                color: kOrangeLight,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.inventory_2_outlined,
+                color: kOrange,
+                size: 38,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: kTextPrimary,
+              ),
+            ),
+          ],
         ),
       ),
     );

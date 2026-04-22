@@ -190,7 +190,7 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
         backgroundColor: kOrange,
         elevation: 3,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Icon(Icons.add,color: Colors.white,),
+        child: Icon(Icons.add, color: Colors.white),
       ),
     );
   }

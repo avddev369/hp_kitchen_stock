@@ -52,7 +52,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
@@ -77,8 +76,52 @@ class _MyAppState extends State<MyApp> {
             colorSchemeSeed: primaryColor,
             appBarTheme: AppBarTheme(backgroundColor: Colors.transparent,shadowColor: Colors.transparent)
         ),
+        navigatorObservers: [PageLogObserver()],
         home:  SplashScreen(),
       );
     });
+  }
+}
+
+class PageLogObserver extends NavigatorObserver {
+  void _logCurrentPage(Route<dynamic>? route) {
+    if (route == null) return;
+
+    String pageName = route.settings.name ?? '';
+
+    if (pageName.isEmpty && route is MaterialPageRoute) {
+      final context = route.subtreeContext ?? navigator?.context ?? Get.context;
+      if (context != null) {
+        try {
+          pageName = route.builder(context).runtimeType.toString();
+        } catch (_) {
+          pageName = route.runtimeType.toString();
+        }
+      }
+    }
+
+    if (pageName.isEmpty) {
+      pageName = route.runtimeType.toString();
+    }
+
+    debugPrint('Current page: $pageName');
+  }
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPush(route, previousRoute);
+    _logCurrentPage(route);
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
+    _logCurrentPage(newRoute);
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPop(route, previousRoute);
+    _logCurrentPage(previousRoute);
   }
 }
