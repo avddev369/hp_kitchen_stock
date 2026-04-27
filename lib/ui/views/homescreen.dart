@@ -905,15 +905,8 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
     TextEditingController engNameController = TextEditingController();
     TextEditingController gujNameController = TextEditingController();
 
-    String? selectedLocation;
     String? selectedUnit;
 
-    List<String> locations = [
-      "HPYM Kothar",
-      "AVD",
-      "Sukun Cold Storage",
-      "Amar Cold Storage",
-    ];
     List<String> units = [
       "Kg",
       "gm",
@@ -1062,37 +1055,6 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
                               ),
                             ),
                             const SizedBox(height: 14),
-                            _dialogLabel('Location'),
-                            DropdownButtonFormField2<String>(
-                              value: selectedLocation,
-                              decoration: _dropdownDecoration(
-                                'Select location',
-                              ),
-                              items: locations
-                                  .map(
-                                    (l) => DropdownMenuItem(
-                                      value: l,
-                                      child: Text(
-                                        l,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (v) =>
-                                  setDialogState(() => selectedLocation = v),
-                              validator: (v) =>
-                                  v == null ? 'Please select a location' : null,
-                              dropdownStyleData: DropdownStyleData(
-                                maxHeight: 200,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -1145,7 +1107,7 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
                                       engNameController.text,
                                       gujNameController.text,
                                       selectedUnit ?? '',
-                                      selectedLocation!,
+                                      '',
                                     );
                                     if (result['errorStatus'] == false) {
                                       Navigator.pop(context);

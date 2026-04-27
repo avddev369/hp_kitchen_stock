@@ -508,7 +508,6 @@ Future<void> showRemoveItemDialog(BuildContext context, int itemId,int categoryI
   TextEditingController quantityController = TextEditingController();
   TextEditingController sevakNameController = TextEditingController();
   TextEditingController sevakNoController = TextEditingController();
-  TextEditingController ExpiryDateController = TextEditingController();
 
 
 
@@ -595,7 +594,6 @@ Future<void> showRemoveItemDialog(BuildContext context, int itemId,int categoryI
               "type": selectedType!,
               "sevakName": showSevakFields ? sevakNameController.text.trim() : "",
               "sevakNo": showSevakFields ? sevakNoController.text.trim() : "",
-              "expiryDate": ExpiryDateController.text.trim(),
 
 
               "itemTo": "Remove",  // Change from "Add" to "Remove"
@@ -700,30 +698,6 @@ Future<void> showRemoveItemDialog(BuildContext context, int itemId,int categoryI
                       isNumeric: true,
                       isRequired: true,
                       keyboardType: TextInputType.number,
-                    ),
-                    _buildHeader("Expiry Date"),
-                    GestureDetector(
-                      onTap: () async {
-                        DateTime? pickedDate = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime(2101),
-                        );
-                        if (pickedDate != null) {
-                          setState(() {
-                            ExpiryDateController.text = "${pickedDate.toLocal()}".split(' ')[0];
-                          });
-                        }
-                      },
-                      child: AbsorbPointer(
-                        child: buildStyledTextField(
-                          controller: ExpiryDateController,
-                          label: "",
-                          isRequired: true,
-
-                        ),
-                      ),
                     ),
 
                     _buildHeader("Type"),

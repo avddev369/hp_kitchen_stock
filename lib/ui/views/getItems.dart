@@ -3,6 +3,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:klitchen_stock/ui/controllers/filterItemsController.dart' show FilteredItemsController;
+import 'package:klitchen_stock/ui/models/items/filterItems.dart';
 import 'package:klitchen_stock/ui/views/showitemsDetails.dart' show ItemDetailScreen;
 import '../../widgets/addDialogbox.dart';
 
@@ -29,7 +30,6 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
   static const Color kBorder = Color(0xFFEEEFF4);
   static const Color kTextPrimary = Color(0xFF1A1D23);
   static const Color kTextSecondary = Color(0xFF9599B0);
-  String _selectedGodown = 'All';
 
   @override
   void initState() {
@@ -41,24 +41,15 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
     await _fc.GetFilteredItems(widget.categoryId);
   }
 
-  List<String> get _godownOptions {
-    final locations = _fc.filteredItems
-        .map((item) => item.location.toString().trim())
-        .where((location) => location.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort();
-    return ['All', ...locations];
-  }
+  Map<String, List<FilterItem>> get _groupedItems {
+    final Map<String, List<FilterItem>> grouped = {};
 
-  List<dynamic> get _visibleItems {
-    if (_selectedGodown == 'All') {
-      return _fc.filteredItems;
+    for (final item in _fc.filteredItems) {
+      grouped.putIfAbsent(item.engName, () => <FilterItem>[]).add(item);
     }
 
-    return _fc.filteredItems
-        .where((item) => item.location.toString().trim() == _selectedGodown)
-        .toList();
+    final sortedKeys = grouped.keys.toList()..sort();
+    return {for (final key in sortedKeys) key: grouped[key]!};
   }
 
   @override
@@ -86,7 +77,7 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
               ),
             ),
             Text(
-              'Items by godown',
+              'Items with godown-wise stock',
               style: GoogleFonts.poppins(
                 color: kTextSecondary,
                 fontSize: 11.5,
@@ -97,100 +88,27 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
       ),
       body: Column(
         children: [
-          _buildFilterSection(),
           Expanded(
             child: _fc.filteredItems.isEmpty
                 ? const Center(
                     child: SpinKitFadingCircle(color: kOrange, size: 44),
                   )
-                : _visibleItems.isEmpty
-                    ? _buildEmptyFilterState()
-                    : ListView.builder(
+                : ListView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                        itemCount: _visibleItems.length + 1,
+                        itemCount: _groupedItems.length + 1,
                         itemBuilder: (context, index) {
                           if (index == 0) {
-                            return _buildSummaryCard(_visibleItems.length);
+                            return _buildSummaryCard(_groupedItems.length);
                           }
 
-                          final item = _visibleItems[index - 1];
-                          return _buildItemCard(context, item);
+                          final entry = _groupedItems.entries.elementAt(index - 1);
+                          return _buildItemGroupCard(context, entry.key, entry.value);
                         },
                       ),
           ),
         ],
       ),
     ));
-  }
-
-  Widget _buildFilterSection() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: kBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Godown Filter',
-            style: GoogleFonts.poppins(
-              color: kTextPrimary,
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Display items location-wise for faster stock checks',
-            style: GoogleFonts.poppins(
-              color: kTextSecondary,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Container(
-            decoration: BoxDecoration(
-              color: kBackground,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: kBorder),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _godownOptions.contains(_selectedGodown)
-                    ? _selectedGodown
-                    : 'All',
-                isExpanded: true,
-                icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                style: GoogleFonts.poppins(
-                  color: kTextPrimary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-                items: _godownOptions
-                    .map(
-                      (godown) => DropdownMenuItem<String>(
-                        value: godown,
-                        child: Text(godown),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value == null) return;
-                  setState(() {
-                    _selectedGodown = value;
-                  });
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildSummaryCard(int itemCount) {
@@ -218,9 +136,7 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  _selectedGodown == 'All'
-                      ? 'Tap any item to open full details'
-                      : 'Showing items for $_selectedGodown',
+                  'Open an item to view its godown-wise stock rows',
                   style: GoogleFonts.poppins(
                     fontSize: 12.5,
                     color: kTextSecondary,
@@ -249,52 +165,14 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
     );
   }
 
-  Widget _buildEmptyFilterState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 76,
-              height: 76,
-              decoration: const BoxDecoration(
-                color: kOrangeLight,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.filter_alt_off_rounded,
-                color: kOrange,
-                size: 34,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No items in this godown',
-              style: GoogleFonts.poppins(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: kTextPrimary,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Try a different godown filter to view available items.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: kTextSecondary,
-                height: 1.6,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildItemGroupCard(
+    BuildContext context,
+    String itemName,
+    List<FilterItem> godownItems,
+  ) {
+    final totalQty = godownItems.fold<int>(0, (sum, item) => sum + item.qty);
+    final unit = godownItems.isNotEmpty ? godownItems.first.unit : '';
 
-  Widget _buildItemCard(BuildContext context, dynamic item) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
@@ -312,149 +190,165 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ItemDetailScreen(
-                  itemId: item.itemId ?? 0,
-                  itemName: item.engName ?? 'N/A',
-                  qty: item.qty,
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            tilePadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+            childrenPadding: const EdgeInsets.fromLTRB(13, 0, 13, 13),
+            iconColor: kOrange,
+            collapsedIconColor: kTextSecondary,
+            leading: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFFF0EA), Color(0xFFFFE0D1)],
+                ),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.kitchen_rounded,
+                color: kOrange,
+                size: 20,
+              ),
+            ),
+            title: Text(
+              itemName,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                color: kTextPrimary,
+              ),
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                '${godownItems.length} godown${godownItems.length == 1 ? '' : 's'} | $totalQty $unit',
+                style: GoogleFonts.poppins(
+                  fontSize: 11.5,
+                  color: kTextSecondary,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-            );
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(13),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFFF0EA), Color(0xFFFFE0D1)],
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Icon(
-                        Icons.kitchen_rounded,
-                        color: kOrange,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.engName ?? 'No Name',
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
-                              color: kTextPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 1),
-                          Text(
-                            '${item.qty ?? '0'} ${item.unit ?? ''}',
-                            style: GoogleFonts.poppins(
-                              fontSize: 11.5,
-                              color: kTextSecondary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: kBackground,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.chevron_right_rounded,
-                        color: kTextSecondary,
-                        size: 18,
-                      ),
-                    ),
-                  ],
+            ),
+            children: godownItems
+                .map((item) => _buildGodownRow(context, item))
+                .toList(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGodownRow(BuildContext context, FilterItem item) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFAF6),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFFEEE4)),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ItemDetailScreen(
+                    itemId: item.itemId,
+                    itemName: item.engName,
+                    qty: item.qty,
+                  ),
                 ),
-                const SizedBox(height: 10),
+              );
+            },
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.location_on_outlined,
+                  color: kOrange,
+                  size: 16,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    item.location.isNotEmpty ? item.location : 'Unknown location',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11.5,
+                      color: kTextPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${item.qty} ${item.unit}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11.5,
+                    color: kTextSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 9,
-                  ),
+                  width: 28,
+                  height: 28,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFFAF6),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFFFEEE4)),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on_outlined,
-                        color: kOrange,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          item.location ?? 'Unknown location',
-                          style: GoogleFonts.poppins(
-                            fontSize: 11.5,
-                            color: kTextSecondary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildActionButton(
-                        label: 'Add',
-                        icon: Icons.add_rounded,
-                        onTap: () async {
-                          await showAddItemDialog(
-                            context,
-                            item.itemId,
-                            item.categoryId,
-                            widget.categoryName ?? '',
-                            item.engName,
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 6),
-                      _buildActionButton(
-                        label: 'Use',
-                        icon: Icons.remove_rounded,
-                        onTap: () {
-                          showRemoveItemDialog(
-                            context,
-                            item.itemId,
-                            item.categoryId,
-                            widget.categoryName ?? '',
-                            item.engName,
-                          );
-                        },
-                        isPrimary: false,
-                      ),
-                    ],
+                  child: const Icon(
+                    Icons.chevron_right_rounded,
+                    color: kTextSecondary,
+                    size: 18,
                   ),
                 ),
               ],
             ),
           ),
-        ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _buildActionButton(
+                  label: 'Add',
+                  icon: Icons.add_rounded,
+                  onTap: () async {
+                    await showAddItemDialog(
+                      context,
+                      item.itemId,
+                      item.categoryId,
+                      widget.categoryName ?? '',
+                      item.engName,
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildActionButton(
+                  label: 'Use',
+                  icon: Icons.remove_rounded,
+                  onTap: () {
+                    showRemoveItemDialog(
+                      context,
+                      item.itemId,
+                      item.categoryId,
+                      widget.categoryName ?? '',
+                      item.engName,
+                    );
+                  },
+                  isPrimary: false,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

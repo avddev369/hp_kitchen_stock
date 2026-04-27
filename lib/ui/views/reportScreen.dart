@@ -304,7 +304,6 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
         return;
       }
 
-      // 🔎 Filtering logic
       filteredItems = items.where((item) {
         if (isNotEmpty(filter["itemName"]) &&
             item["itemName"] != filter["itemName"]) return false;
