@@ -167,6 +167,37 @@ class Api {
     }
   }
 
+  static Future<List<String>> getGodownNames() async {
+    try {
+      final response = await client!.post(
+        'http://27.116.52.24:8060/getData',
+        data: {
+          "table": "location",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = response.data;
+
+        if (responseData['errorStatus'] == false && responseData['data'] is List) {
+          return (responseData['data'] as List)
+              .map((item) => (item['godown_name'] ?? '').toString().trim())
+              .where((name) => name.isNotEmpty)
+              .toSet()
+              .toList()
+            ..sort();
+        } else {
+          throw Exception('Error: ${responseData['message']}');
+        }
+      } else {
+        throw Exception(
+            'Failed to load godowns. Status code: ${response.statusCode}');
+      }
+    } catch (error) {
+      throw Exception('Error occurred during godown fetch: $error');
+    }
+  }
+
 
   static Future<Map<String, dynamic>> getItemDetails(int itemId) async {
     try {

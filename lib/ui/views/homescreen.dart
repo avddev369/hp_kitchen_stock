@@ -23,9 +23,41 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _searchController = TextEditingController();
 
+  List<dynamic> _allCategories = [];
   List<dynamic> _searchResults = [];
   bool _isSearching = false;
   bool _isLoading = false;
+  String? _loadError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
+
+    try {
+      final response = await Api.getItems();
+      setState(() {
+        _allCategories = List<dynamic>.from(response['data'] ?? []);
+      });
+    } catch (error) {
+      setState(() {
+        _loadError = error.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   // Design tokens — clean, minimal palette
   static const Color kOrange = Color(0xFFFF6B35);
@@ -44,12 +76,17 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
       });
       return;
     }
-    setState(() => _isLoading = true);
-    List<dynamic> results = await Api.searchItems(query);
+
+    final lowerQuery = query.toLowerCase().trim();
+    final results = _allCategories.where((item) {
+      final engName = (item['engName'] ?? '').toString().toLowerCase();
+      final gujName = (item['gujName'] ?? '').toString().toLowerCase();
+      return engName.contains(lowerQuery) || gujName.contains(lowerQuery);
+    }).toList();
+
     setState(() {
       _isSearching = true;
       _searchResults = results;
-      _isLoading = false;
     });
   }
 
@@ -179,8 +216,8 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
                       child: SpinKitFadingCircle(color: kOrange, size: 44),
                     )
                   : _isSearching
-                  ? _buildSearchResults()
-                  : _buildDefaultItems(),
+                      ? _buildSearchResults()
+                      : _buildDefaultItems(),
             ),
           ],
         ),
@@ -246,6 +283,11 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
               _buildHeaderIconButton(
                 icon: Icons.list_alt_rounded,
                 onTap: () => Get.to(ManageItemsScreen()),
+              ),
+              const SizedBox(width: 8),
+              _buildHeaderIconButton(
+                icon: Icons.refresh_rounded,
+                onTap: _loadCategories,
               ),
               const SizedBox(width: 8),
               _buildHeaderIconButton(
@@ -489,95 +531,8 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
           );
         }
 
-        return _buildSearchCard(_searchResults[index - 1]);
+        return _buildCategoryCard(_searchResults[index - 1]);
       },
-    );
-  }
-
-  Widget _buildSearchCard(dynamic item) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: kSurface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: kBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFFF0EA), Color(0xFFFFE1D6)],
-                ),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: const Icon(
-                Icons.inventory_2_rounded,
-                color: kOrange,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "${item['engName']}",
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14.5,
-                      color: kTextPrimary,
-                    ),
-                  ),
-                  if ((item['gujName'] ?? '').isNotEmpty) ...[
-                    const SizedBox(height: 3),
-                    Text(
-                      "${item['gujName']}",
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: kTextSecondary,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 9),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: [
-                      _buildChip(
-                        Icons.category_rounded,
-                        "${item['categoryName']}",
-                        kOrangeLight,
-                        kOrange,
-                      ),
-                      if ((item['location'] ?? '').isNotEmpty)
-                        _buildChip(
-                          Icons.location_on_rounded,
-                          "${item['location']}",
-                          const Color(0xFFEBF3FF),
-                          const Color(0xFF4A90D9),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -612,122 +567,114 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
   }
 
   Widget _buildDefaultItems() {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: Api.getItems(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: SpinKitFadingCircle(color: kOrange, size: 44),
-          );
-        } else if (snapshot.hasError) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 76,
-                    height: 76,
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.cloud_off_rounded,
-                      color: Colors.red.shade300,
-                      size: 36,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Something went wrong',
-                    style: GoogleFonts.poppins(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: kTextPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${snapshot.error}',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: kTextSecondary,
-                      height: 1.6,
-                    ),
-                  ),
-                ],
+    if (_loadError != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 76,
+                height: 76,
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.cloud_off_rounded,
+                  color: Colors.red.shade300,
+                  size: 36,
+                ),
               ),
+              const SizedBox(height: 16),
+              Text(
+                'Something went wrong',
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: kTextPrimary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                _loadError!,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: kTextSecondary,
+                  height: 1.6,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_allCategories.isEmpty) {
+      return Center(
+        child: Text(
+          'No data available',
+          style: GoogleFonts.poppins(fontSize: 14, color: kTextSecondary),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+      itemCount: _allCategories.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: kBorder),
             ),
-          );
-        } else if (snapshot.hasData) {
-          var items = snapshot.data!['data'];
-          return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-            itemCount: items.length + 1,
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 14),
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: kBorder),
-                  ),
-                  child: Row(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'All Categories',
-                              style: GoogleFonts.poppins(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w700,
-                                color: kTextPrimary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: kOrangeLight,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          '${items.length}',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: kOrange,
-                            fontWeight: FontWeight.w700,
-                          ),
+                      Text(
+                        'All Categories',
+                        style: GoogleFonts.poppins(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: kTextPrimary,
                         ),
                       ),
                     ],
                   ),
-                );
-              }
-
-              return _buildCategoryCard(items[index - 1]);
-            },
-          );
-        } else {
-          return Center(
-            child: Text(
-              'No data available',
-              style: GoogleFonts.poppins(fontSize: 14, color: kTextSecondary),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: kOrangeLight,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    '${_allCategories.length}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: kOrange,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
             ),
           );
         }
+
+        return _buildCategoryCard(_allCategories[index - 1]);
       },
     );
   }
@@ -896,16 +843,24 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
     );
   }
 
-  void showAddItemDialog(
+  Future<void> showAddItemDialog(
     BuildContext context,
     String categoryName,
     String categoryId,
-  ) {
+  ) async {
     final itemFormKey = GlobalKey<FormState>();
     TextEditingController engNameController = TextEditingController();
     TextEditingController gujNameController = TextEditingController();
 
+    String? selectedLocation;
     String? selectedUnit;
+    List<String> godownOptions = [];
+
+    try {
+      godownOptions = await Api.getGodownNames();
+    } catch (_) {
+      godownOptions = [];
+    }
 
     List<String> units = [
       "Kg",
@@ -1025,6 +980,50 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
                               'Enter Gujarati name',
                             ),
                             const SizedBox(height: 14),
+                            _dialogLabel('Godown'),
+                            if (godownOptions.isNotEmpty)
+                              DropdownButtonFormField2<String>(
+                                value: selectedLocation,
+                                decoration: _dropdownDecoration(
+                                  'Select godown',
+                                ),
+                                items: godownOptions
+                                    .map(
+                                      (godown) => DropdownMenuItem(
+                                        value: godown,
+                                        child: Text(
+                                          godown,
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (v) =>
+                                    setDialogState(() => selectedLocation = v),
+                                validator: (v) =>
+                                    v == null ? 'Please select a godown' : null,
+                                dropdownStyleData: DropdownStyleData(
+                                  maxHeight: 200,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              )
+                            else
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Text(
+                                  'No godown found. Please add godown in location table.',
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.red,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            const SizedBox(height: 14),
                             _dialogLabel('Unit'),
                             DropdownButtonFormField2<String>(
                               value: selectedUnit,
@@ -1107,7 +1106,7 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
                                       engNameController.text,
                                       gujNameController.text,
                                       selectedUnit ?? '',
-                                      '',
+                                      selectedLocation ?? '',
                                     );
                                     if (result['errorStatus'] == false) {
                                       Navigator.pop(context);
@@ -1413,7 +1412,7 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
                                 if (result['errorStatus'] == false) {
                                   if (!mounted) return;
                                   Navigator.pop(dialogContext);
-                                  setState(() {});
+                                  await _loadCategories();
                                   Future.delayed(
                                     const Duration(milliseconds: 100),
                                     () {

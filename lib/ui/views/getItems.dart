@@ -30,6 +30,7 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
   static const Color kBorder = Color(0xFFEEEFF4);
   static const Color kTextPrimary = Color(0xFF1A1D23);
   static const Color kTextSecondary = Color(0xFF9599B0);
+  String _selectedGodown = 'All';
 
   @override
   void initState() {
@@ -41,10 +42,30 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
     await _fc.GetFilteredItems(widget.categoryId);
   }
 
+  List<String> get _godownOptions {
+    final locations = _fc.filteredItems
+        .map((item) => item.location.toString().trim())
+        .where((location) => location.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    return ['All', ...locations];
+  }
+
+  List<FilterItem> get _visibleItems {
+    if (_selectedGodown == 'All') {
+      return _fc.filteredItems.toList();
+    }
+
+    return _fc.filteredItems
+        .where((item) => item.location.toString().trim() == _selectedGodown)
+        .toList();
+  }
+
   Map<String, List<FilterItem>> get _groupedItems {
     final Map<String, List<FilterItem>> grouped = {};
 
-    for (final item in _fc.filteredItems) {
+    for (final item in _visibleItems) {
       grouped.putIfAbsent(item.engName, () => <FilterItem>[]).add(item);
     }
 
@@ -88,11 +109,14 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
       ),
       body: Column(
         children: [
+          _buildFilterSection(),
           Expanded(
             child: _fc.filteredItems.isEmpty
                 ? const Center(
                     child: SpinKitFadingCircle(color: kOrange, size: 44),
                   )
+                : _groupedItems.isEmpty
+                    ? _buildEmptyFilterState()
                 : ListView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                         itemCount: _groupedItems.length + 1,
@@ -102,13 +126,125 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
                           }
 
                           final entry = _groupedItems.entries.elementAt(index - 1);
-                          return _buildItemGroupCard(context, entry.key, entry.value);
+                          return _buildItemGroupCard(context, entry.value);
                         },
                       ),
           ),
         ],
       ),
     ));
+  }
+
+  Widget _buildFilterSection() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: kBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Godown Filter',
+            style: GoogleFonts.poppins(
+              color: kTextPrimary,
+              fontSize: 15.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Filter items by selected godown',
+            style: GoogleFonts.poppins(
+              color: kTextSecondary,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFAF6),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFFFE6DA)),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _godownOptions.contains(_selectedGodown)
+                    ? _selectedGodown
+                    : 'All',
+                isExpanded: true,
+                borderRadius: BorderRadius.circular(16),
+                dropdownColor: Colors.white,
+                icon: Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: kOrange,
+                    size: 18,
+                  ),
+                ),
+                style: GoogleFonts.poppins(
+                  color: kTextPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+                items: _godownOptions
+                    .map(
+                      (godown) => DropdownMenuItem<String>(
+                        value: godown,
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: kOrangeLight,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.location_on_outlined,
+                                color: kOrange,
+                                size: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                godown,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.poppins(
+                                  color: kTextPrimary,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() {
+                    _selectedGodown = value;
+                  });
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSummaryCard(int itemCount) {
@@ -136,7 +272,9 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  'Open an item to view its godown-wise stock rows',
+                  _selectedGodown == 'All'
+                      ? 'Open an item to view its godown-wise stock rows'
+                      : 'Showing items for $_selectedGodown',
                   style: GoogleFonts.poppins(
                     fontSize: 12.5,
                     color: kTextSecondary,
@@ -165,11 +303,56 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
     );
   }
 
+  Widget _buildEmptyFilterState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 76,
+              height: 76,
+              decoration: const BoxDecoration(
+                color: kOrangeLight,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.filter_alt_off_rounded,
+                color: kOrange,
+                size: 34,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No items in this godown',
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: kTextPrimary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Try a different godown filter to view available items.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: kTextSecondary,
+                height: 1.6,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildItemGroupCard(
     BuildContext context,
-    String itemName,
     List<FilterItem> godownItems,
   ) {
+    final firstItem = godownItems.first;
     final totalQty = godownItems.fold<int>(0, (sum, item) => sum + item.qty);
     final unit = godownItems.isNotEmpty ? godownItems.first.unit : '';
 
@@ -213,22 +396,37 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
               ),
             ),
             title: Text(
-              itemName,
+              firstItem.engName,
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.w700,
-                fontSize: 14,
+                fontSize: 14.5,
                 color: kTextPrimary,
               ),
             ),
             subtitle: Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                '${godownItems.length} godown${godownItems.length == 1 ? '' : 's'} | $totalQty $unit',
-                style: GoogleFonts.poppins(
-                  fontSize: 11.5,
-                  color: kTextSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
+              padding: const EdgeInsets.only(top: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (firstItem.gujName.trim().isNotEmpty)
+                    Text(
+                      firstItem.gujName,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12.5,
+                        color: kTextSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${godownItems.length} godown${godownItems.length == 1 ? '' : 's'} | $totalQty $unit',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11.5,
+                      color: kTextSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
             children: godownItems

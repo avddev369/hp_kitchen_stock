@@ -102,12 +102,13 @@ Future<void> showAddItemDialog(BuildContext context, int itemId, int categoryId,
   String? selectedType;
   String? selectedGodown;
   bool showSevakFields = false;
-  final List<String> godownOptions = [
-    "HPYM Kothar",
-    "AVD",
-    "Sukun Cold Storage",
-    "Amar Cold Storage"
-  ];
+  List<String> godownOptions = [];
+
+  try {
+    godownOptions = await Api.getGodownNames();
+  } catch (_) {
+    godownOptions = [];
+  }
 
   showDialog(
     context: context,
@@ -509,10 +510,16 @@ Future<void> showRemoveItemDialog(BuildContext context, int itemId,int categoryI
   TextEditingController sevakNameController = TextEditingController();
   TextEditingController sevakNoController = TextEditingController();
 
-
-
   String? selectedType;
+  String? selectedGodown;
   bool showSevakFields = false;
+  List<String> godownOptions = [];
+
+  try {
+    godownOptions = await Api.getGodownNames();
+  } catch (_) {
+    godownOptions = [];
+  }
 
 
   showDialog(
@@ -543,6 +550,17 @@ Future<void> showRemoveItemDialog(BuildContext context, int itemId,int categoryI
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text("Please select a Type!"),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              setState(() => isLoading = false);
+              return;
+            }
+
+            if (selectedGodown == null || selectedGodown!.trim().isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Please select a Godown!"),
                   backgroundColor: Colors.red,
                 ),
               );
@@ -594,7 +612,7 @@ Future<void> showRemoveItemDialog(BuildContext context, int itemId,int categoryI
               "type": selectedType!,
               "sevakName": showSevakFields ? sevakNameController.text.trim() : "",
               "sevakNo": showSevakFields ? sevakNoController.text.trim() : "",
-
+              "location": selectedGodown,
 
               "itemTo": "Remove",  // Change from "Add" to "Remove"
               "createdBy": 1
@@ -699,6 +717,26 @@ Future<void> showRemoveItemDialog(BuildContext context, int itemId,int categoryI
                       isRequired: true,
                       keyboardType: TextInputType.number,
                     ),
+                    _buildHeader("Godown"),
+                    if (godownOptions.isNotEmpty)
+                      buildDropdown(
+                        "Godown",
+                        godownOptions,
+                        selectedGodown,
+                        (value) {
+                          setState(() {
+                            selectedGodown = value;
+                          });
+                        },
+                      )
+                    else
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8.0),
+                        child: Text(
+                          "No godown found. Please add godown in location table.",
+                          style: TextStyle(color: Colors.red, fontSize: 12),
+                        ),
+                      ),
 
                     _buildHeader("Type"),
                     buildDropdown(
