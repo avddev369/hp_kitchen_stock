@@ -115,48 +115,45 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
 
   Widget _buildSummaryCard(int itemCount) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: kBorder),
       ),
       child: Row(
         children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: kOrangeLight,
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: const Icon(Icons.inventory_2_rounded, color: kOrange, size: 16),
+          ),
+          const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Available Items',
-                  style: GoogleFonts.poppins(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: kTextPrimary,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  'Tap a card for details or use the actions directly',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12.5,
-                    color: kTextSecondary,
-                  ),
-                ),
-              ],
+            child: Text(
+              'Available Items',
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: kTextPrimary,
+              ),
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: kOrangeLight,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              '$itemCount',
+              '$itemCount items',
               style: GoogleFonts.poppins(
-                fontSize: 14,
+                fontSize: 12,
                 color: kOrange,
                 fontWeight: FontWeight.w700,
               ),
@@ -214,24 +211,24 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
 
   Widget _buildItemCard(BuildContext context, FilterItem item) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: kSurface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: kBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
         child: InkWell(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(14),
           onTap: () {
             Navigator.push(
               context,
@@ -245,115 +242,97 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
             );
           },
           child: Padding(
-            padding: const EdgeInsets.all(13),
-            child: Column(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFFF0EA), Color(0xFFFFE0D1)],
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Icon(
-                        Icons.kitchen_rounded,
-                        color: kOrange,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.engName,
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14.5,
-                              color: kTextPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (item.gujName.trim().isNotEmpty) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              item.gujName,
-                              style: GoogleFonts.poppins(
-                                fontSize: 12.5,
-                                color: kTextSecondary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                          const SizedBox(height: 4),
-                          Text(
-                            '${item.qty} ${item.unit}',
-                            style: GoogleFonts.poppins(
-                              fontSize: 11.5,
-                              color: kTextSecondary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.chevron_right_rounded,
-                        color: kTextSecondary,
-                        size: 18,
-                      ),
-                    ),
-                  ],
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: kOrangeLight,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.kitchen_rounded,
+                    color: kOrange,
+                    size: 18,
+                  ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.engName,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13.5,
+                          color: kTextPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (item.gujName.trim().isNotEmpty)
+                        Text(
+                          item.gujName,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11.5,
+                            color: kTextSecondary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      const SizedBox(height: 1),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: kOrangeLight,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Text(
+                          '${item.qty} ${item.unit}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 10.5,
+                            color: kOrange,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: _buildActionButton(
-                        label: 'Add',
-                        icon: Icons.add_rounded,
-                        onTap: () async {
-                          await showAddItemDialog(
-                            context,
-                            item.itemId,
-                            item.categoryId,
-                            widget.categoryName ?? '',
-                            item.engName,
-                          );
-                        },
-                      ),
+                    _buildActionButton(
+                      label: 'Add',
+                      icon: Icons.add_rounded,
+                      onTap: () async {
+                        await showAddItemDialog(
+                          context,
+                          item.itemId,
+                          item.categoryId,
+                          widget.categoryName ?? '',
+                          item.engName,
+                        );
+                      },
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildActionButton(
-                        label: 'Use',
-                        icon: Icons.remove_rounded,
-                        onTap: () {
-                          showRemoveItemDialog(
-                            context,
-                            item.itemId,
-                            item.categoryId,
-                            widget.categoryName ?? '',
-                            item.engName,
-                          );
-                        },
-                        isPrimary: false,
-                      ),
+                    const SizedBox(width: 6),
+                    _buildActionButton(
+                      label: 'Use',
+                      icon: Icons.remove_rounded,
+                      onTap: () {
+                        showRemoveItemDialog(
+                          context,
+                          item.itemId,
+                          item.categoryId,
+                          widget.categoryName ?? '',
+                          item.engName,
+                        );
+                      },
+                      isPrimary: false,
                     ),
                   ],
                 ),
@@ -374,22 +353,22 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
         decoration: BoxDecoration(
           color: isPrimary ? kOrange : Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           border: isPrimary ? null : Border.all(color: const Color(0xFFFFD8C8)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: isPrimary ? Colors.white : kOrange),
-            const SizedBox(width: 4),
+            Icon(icon, size: 12, color: isPrimary ? Colors.white : kOrange),
+            const SizedBox(width: 3),
             Text(
               label,
               style: GoogleFonts.poppins(
                 color: isPrimary ? Colors.white : kOrange,
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w700,
               ),
             ),
