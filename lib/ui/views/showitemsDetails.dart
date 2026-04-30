@@ -9,8 +9,12 @@ class ItemDetailScreen extends StatefulWidget {
   final String itemName;
   final int? qty;
 
-
-  const ItemDetailScreen({Key? key, required this.itemId, required this.itemName,this.qty}) : super(key: key);
+  const ItemDetailScreen({
+    Key? key,
+    required this.itemId,
+    required this.itemName,
+    this.qty,
+  }) : super(key: key);
 
   @override
   _ItemDetailScreenState createState() => _ItemDetailScreenState();
@@ -36,9 +40,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     super.initState();
     futureItemDetails = Api.getItemDetails(widget.itemId);
   }
-  getItems() async {
 
-  }
+  getItems() async {}
 
   void _searchItems(String query) {
     if (query.isEmpty) {
@@ -62,7 +65,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       }).toList();
     });
   }
-
 
   @override
   void dispose() {
@@ -126,16 +128,14 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-              child: SpinKitFadingCircle(
-                color: kOrange,
-                size: 46.0,
-              ),
+              child: SpinKitFadingCircle(color: kOrange, size: 46.0),
             );
           } else if (snapshot.hasError) {
             return _buildEmptyState('No details available for this item');
           } else if (snapshot.hasData) {
             allItems = snapshot.data?['data'] ?? [];
-            filteredItems = filteredItems.isEmpty && searchController.text.isEmpty
+            filteredItems =
+                filteredItems.isEmpty && searchController.text.isEmpty
                 ? List.from(allItems)
                 : filteredItems;
 
@@ -226,7 +226,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   Widget _buildHistoryCard(dynamic item, String itemTo) {
     final isAdd = itemTo == 'add';
-    final badgeColor = isAdd ? const Color(0xFF22A45D) : const Color(0xFFE05050);
+    final badgeColor = isAdd
+        ? const Color(0xFF22A45D)
+        : const Color(0xFFE05050);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -260,8 +262,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: badgeColor,
                     borderRadius: BorderRadius.circular(12),
@@ -285,14 +289,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     'Category',
                     item['categoryName'],
                     Icons.category_rounded,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _buildDetailTile(
-                    'Location',
-                    item['location'],
-                    Icons.location_on_outlined,
                   ),
                 ),
               ],
@@ -352,7 +348,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   child: _buildDetailTile(
                     'Item To',
                     item['itemTo'],
-                    isAdd ? Icons.add_circle_outline_rounded : Icons.remove_circle_outline_rounded,
+                    isAdd
+                        ? Icons.add_circle_outline_rounded
+                        : Icons.remove_circle_outline_rounded,
                     valueColor: badgeColor,
                   ),
                 ),
@@ -362,8 +360,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             Align(
               alignment: Alignment.centerRight,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: kOrangeLight,
                   borderRadius: BorderRadius.circular(14),

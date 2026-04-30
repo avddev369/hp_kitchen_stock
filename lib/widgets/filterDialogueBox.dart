@@ -10,7 +10,7 @@ class FilterDialogueBox extends StatefulWidget {
   final Function(Map<String, dynamic>) onApplyFilter;
 
   const FilterDialogueBox({Key? key, required this.onApplyFilter})
-      : super(key: key);
+    : super(key: key);
 
   @override
   _FilterDialogueBoxState createState() => _FilterDialogueBoxState();
@@ -18,12 +18,11 @@ class FilterDialogueBox extends StatefulWidget {
 
 class _FilterDialogueBoxState extends State<FilterDialogueBox> {
   String? selectedCategory;
-  String? selectedLocation;
   String? selectedType;
   String? selectedSevakName;
   String? selectedItemName;
   String selectedDateRange = "All";
-  String selectedExpiryDateRange="All";
+  String selectedExpiryDateRange = "All";
 
   bool purchase = false;
   bool seva = false;
@@ -61,6 +60,7 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
       });
     }
   }
+
   Future<void> _selectExpDate(BuildContext context, bool isStartDate) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -86,7 +86,9 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
       builder: (context, itemProvider, child) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12), // Set AlertDialog border radius
+            borderRadius: BorderRadius.circular(
+              12,
+            ), // Set AlertDialog border radius
           ),
           title: const Text("Filter Options"),
           content: itemProvider.isLoading
@@ -99,33 +101,25 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
                       children: [
                         _buildHeader("Item Name"),
                         _buildDropdown(
-                            "Item Name",
-                            itemProvider.items
-                                .map((e) => (e["itemName"] as String?) ?? "")
-                                .toSet()
-                                .toList(),
-                            selectedItemName,
-                                (value) => setState(() => selectedItemName = value)),
+                          "Item Name",
+                          itemProvider.items
+                              .map((e) => (e["itemName"] as String?) ?? "")
+                              .toSet()
+                              .toList(),
+                          selectedItemName,
+                          (value) => setState(() => selectedItemName = value),
+                        ),
 
                         _buildHeader("Category"),
                         _buildDropdown(
-                            "Category",
-                            itemProvider.items
-                                .map((e) => (e["categoryName"] as String?) ?? "")
-                                .toSet()
-                                .toList(),
-                            selectedCategory,
-                                (value) => setState(() => selectedCategory = value)),
-
-                        _buildHeader("Location"),
-                        _buildDropdown(
-                            "Location",
-                            itemProvider.items
-                                .map((e) => (e["location"] as String?) ?? "")
-                                .toSet()
-                                .toList(),
-                            selectedLocation,
-                                (value) => setState(() => selectedLocation = value)),
+                          "Category",
+                          itemProvider.items
+                              .map((e) => (e["categoryName"] as String?) ?? "")
+                              .toSet()
+                              .toList(),
+                          selectedCategory,
+                          (value) => setState(() => selectedCategory = value),
+                        ),
                         Row(
                           children: [
                             Expanded(
@@ -136,16 +130,21 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
                                   _buildDropdown(
                                     "Seva Type",
                                     itemProvider.items
-                                        .map((e) => (e["type"] as String?) ?? "")
+                                        .map(
+                                          (e) => (e["type"] as String?) ?? "",
+                                        )
                                         .toSet()
                                         .toList(),
                                     selectedType,
-                                        (value) => setState(() => selectedType = value),
+                                    (value) =>
+                                        setState(() => selectedType = value),
                                   ),
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 10), // Space between the dropdowns
+                            const SizedBox(
+                              width: 10,
+                            ), // Space between the dropdowns
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,11 +153,16 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
                                   _buildDropdown(
                                     "Sevak Name",
                                     itemProvider.items
-                                        .map((e) => (e["sevakName"] as String?) ?? "")
+                                        .map(
+                                          (e) =>
+                                              (e["sevakName"] as String?) ?? "",
+                                        )
                                         .toSet()
                                         .toList(),
                                     selectedSevakName,
-                                        (value) => setState(() => selectedSevakName = value),
+                                    (value) => setState(
+                                      () => selectedSevakName = value,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -167,14 +171,15 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
                         ),
                         const SizedBox(height: 10),
 
-
                         _buildHeader("Expiry Date"),
 
                         _buildDropdown(
-                            "Date Range",
-                            ["All", "Custom Range"],
-                            selectedExpiryDateRange,
-                                (value) => setState(() => selectedExpiryDateRange = value!)),
+                          "Date Range",
+                          ["All", "Custom Range"],
+                          selectedExpiryDateRange,
+                          (value) =>
+                              setState(() => selectedExpiryDateRange = value!),
+                        ),
 
                         if (selectedExpiryDateRange == "Custom Range") ...[
                           Row(
@@ -195,16 +200,17 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
                                 ),
                               ),
                             ],
-                          )
+                          ),
                         ],
 
                         const SizedBox(height: 10),
                         _buildHeader("Date Range"),
                         _buildDropdown(
-                            "Date Range",
-                            ["All", "Custom Range"],
-                            selectedDateRange,
-                                (value) => setState(() => selectedDateRange = value!)),
+                          "Date Range",
+                          ["All", "Custom Range"],
+                          selectedDateRange,
+                          (value) => setState(() => selectedDateRange = value!),
+                        ),
 
                         if (selectedDateRange == "Custom Range") ...[
                           Row(
@@ -225,11 +231,10 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
                                 ),
                               ),
                             ],
-                          )
+                          ),
                         ],
                       ],
-                    )
-
+                    ),
                   ),
                 ),
           actions: [
@@ -237,29 +242,33 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
               style: TextButton.styleFrom(
                 foregroundColor: Colors.orange, // Orange text
                 side: const BorderSide(
-                    color: Colors.orange, width: 2), // Orange outline
+                  color: Colors.orange,
+                  width: 2,
+                ), // Orange outline
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
               ),
               onPressed: () {
                 setState(() {
                   selectedCategory = null;
-                  selectedLocation = null;
                   selectedType = null;
                   selectedSevakName = null;
                   selectedItemName = null;
                   selectedDateRange = "All";
-                  selectedExpiryDateRange="All";
+                  selectedExpiryDateRange = "All";
                   purchase = false;
                   seva = false;
                   used = false;
                   given = false;
                   startDate = null;
                   endDate = null;
-                  startExpDate=null;
-                  endExpDate=null;
+                  startExpDate = null;
+                  endExpDate = null;
                 });
               },
               child: const Text("Clear All Filters"),
@@ -270,15 +279,17 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
                 backgroundColor: Colors.orange, // Orange background
                 foregroundColor: Colors.white, // White text
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
               ),
               onPressed: () {
                 widget.onApplyFilter({
                   "itemName": selectedItemName ?? "",
                   "categoryName": selectedCategory ?? "",
-                  "location": selectedLocation ?? "",
                   "type": selectedType ?? "",
                   "sevakName": selectedSevakName ?? "",
                   "purchase": purchase,
@@ -298,10 +309,6 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
                   "endExpDate": endExpDate != null
                       ? DateFormat("yyyy-MM-dd").format(endExpDate!)
                       : "",
-
-
-
-
                 });
                 Navigator.pop(context);
               },
@@ -313,9 +320,14 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
     );
   }
 
-  Widget _buildDropdown(String label, List<String> items, String? selectedValue,
-      Function(String?) onChanged) {
-    final bool isDateRangeDropdown = label == "Date Range"; // Check if it's Date Range dropdown
+  Widget _buildDropdown(
+    String label,
+    List<String> items,
+    String? selectedValue,
+    Function(String?) onChanged,
+  ) {
+    final bool isDateRangeDropdown =
+        label == "Date Range"; // Check if it's Date Range dropdown
 
     final TextEditingController searchController = TextEditingController();
 
@@ -327,30 +339,41 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
           fillColor: Colors.white,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.orange.withOpacity(0.2), width: 1),
+            borderSide: BorderSide(
+              color: Colors.orange.withOpacity(0.2),
+              width: 1,
+            ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.orange.withOpacity(0.5), width: 1),
+            borderSide: BorderSide(
+              color: Colors.orange.withOpacity(0.5),
+              width: 1,
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: Colors.deepOrange, width: 2),
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 12,
+            horizontal: 16,
+          ),
         ),
         isExpanded: true,
         hint: Text(label, style: const TextStyle(color: Colors.black54)),
         value: selectedValue,
         onChanged: onChanged,
         items: items
-            .map((value) => DropdownMenuItem<String>(
-          value: value,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 16),
-            child: Text(value, overflow: TextOverflow.ellipsis),
-          ),
-        ))
+            .map(
+              (value) => DropdownMenuItem<String>(
+                value: value,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 16),
+                  child: Text(value, overflow: TextOverflow.ellipsis),
+                ),
+              ),
+            )
             .toList(),
         dropdownStyleData: DropdownStyleData(
           maxHeight: 300,
@@ -367,44 +390,54 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
         dropdownSearchData: isDateRangeDropdown
             ? null // Remove search field for Date Range dropdown
             : DropdownSearchData(
-          searchController: searchController,
-          searchInnerWidgetHeight: 50,
-          searchInnerWidget: Padding(
-            padding: const EdgeInsets.all(8),
-            child: TextField(
-              controller: searchController,
-              decoration: InputDecoration(
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                hintText: "Search...",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Colors.orange),
+                searchController: searchController,
+                searchInnerWidgetHeight: 50,
+                searchInnerWidget: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: TextField(
+                    controller: searchController,
+                    decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      hintText: "Search...",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Colors.orange),
+                      ),
+                      suffixIcon: searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(
+                                Icons.clear,
+                                color: Colors.orange,
+                              ),
+                              onPressed: () {
+                                searchController.clear();
+                                setState(
+                                  () {},
+                                ); // Refresh dropdown to show all items
+                              },
+                            )
+                          : null, // Hide clear button if search field is empty
+                    ),
+                    onChanged: (query) {
+                      setState(
+                        () {},
+                      ); // Trigger rebuild to filter items dynamically
+                    },
+                  ),
                 ),
-                suffixIcon: searchController.text.isNotEmpty
-                    ? IconButton(
-                  icon: const Icon(Icons.clear, color: Colors.orange),
-                  onPressed: () {
-                    searchController.clear();
-                    setState(() {}); // Refresh dropdown to show all items
-                  },
-                )
-                    : null, // Hide clear button if search field is empty
+                searchMatchFn: (item, searchValue) {
+                  return item.value.toString().toLowerCase().contains(
+                    searchValue.toLowerCase(),
+                  );
+                },
               ),
-              onChanged: (query) {
-                setState(() {}); // Trigger rebuild to filter items dynamically
-              },
-            ),
-          ),
-          searchMatchFn: (item, searchValue) {
-            return item.value.toString().toLowerCase().contains(searchValue.toLowerCase());
-          },
-        ),
       ),
     );
   }
-
-
 
   Widget _buildHeader(String text) {
     return Padding(
@@ -439,8 +472,9 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
           children: [
             Text(
               date != null
-                  ? DateFormat('dd MMM yyyy')
-                      .format(date) // Converts to "02 Jan 2025"
+                  ? DateFormat('dd MMM yyyy').format(
+                      date,
+                    ) // Converts to "02 Jan 2025"
                   : label,
               style: const TextStyle(fontSize: 16, color: Colors.black),
             ),

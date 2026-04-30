@@ -46,23 +46,23 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
 
         if (isFilterApplied) {
           if (selectedFilters["itemName"]?.isNotEmpty == true) {
-            matchesFilter &= item["itemName"]?.toLowerCase() ==
+            matchesFilter &=
+                item["itemName"]?.toLowerCase() ==
                 selectedFilters["itemName"]?.toLowerCase();
           }
           if (selectedFilters["categoryName"]?.isNotEmpty == true) {
-            matchesFilter &= item["categoryName"]?.toLowerCase() ==
+            matchesFilter &=
+                item["categoryName"]?.toLowerCase() ==
                 selectedFilters["categoryName"]?.toLowerCase();
           }
-          if (selectedFilters["location"]?.isNotEmpty == true) {
-            matchesFilter &= item["location"]?.toLowerCase() ==
-                selectedFilters["location"]?.toLowerCase();
-          }
           if (selectedFilters["type"]?.isNotEmpty == true) {
-            matchesFilter &= item["type"]?.toLowerCase() ==
+            matchesFilter &=
+                item["type"]?.toLowerCase() ==
                 selectedFilters["type"]?.toLowerCase();
           }
           if (selectedFilters["sevakName"]?.isNotEmpty == true) {
-            matchesFilter &= item["sevakName"]?.toLowerCase() ==
+            matchesFilter &=
+                item["sevakName"]?.toLowerCase() ==
                 selectedFilters["sevakName"]?.toLowerCase();
           }
 
@@ -70,11 +70,13 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
           DateTime? itemDate = DateTime.tryParse(item["date"]);
           if (itemDate != null) {
             if (selectedFilters["startDate"] != null) {
-              matchesFilter &= itemDate.isAfter(selectedFilters["startDate"]) ||
+              matchesFilter &=
+                  itemDate.isAfter(selectedFilters["startDate"]) ||
                   itemDate.isAtSameMomentAs(selectedFilters["startDate"]);
             }
             if (selectedFilters["endDate"] != null) {
-              matchesFilter &= itemDate.isBefore(selectedFilters["endDate"]) ||
+              matchesFilter &=
+                  itemDate.isBefore(selectedFilters["endDate"]) ||
                   itemDate.isAtSameMomentAs(selectedFilters["endDate"]);
             }
           }
@@ -103,10 +105,12 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
         if (!jsonResponse["errorStatus"]) {
           setState(() {
             items = [
-              ...jsonResponse["data"]["add"]
-                  .map((item) => {...item, "action": "add"}),
-              ...jsonResponse["data"]["remove"]
-                  .map((item) => {...item, "action": "remove"}),
+              ...jsonResponse["data"]["add"].map(
+                (item) => {...item, "action": "add"},
+              ),
+              ...jsonResponse["data"]["remove"].map(
+                (item) => {...item, "action": "remove"},
+              ),
             ];
           });
           _filterItems(); // Apply existing filters
@@ -117,15 +121,13 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Row(
-          children: [
-            Icon(
-              Icons.error,
-              color: Colors.white,
-            ),
-            Text(" $e"),
-          ],
-        )),
+          content: Row(
+            children: [
+              Icon(Icons.error, color: Colors.white),
+              Text(" $e"),
+            ],
+          ),
+        ),
       );
     }
 
@@ -197,8 +199,6 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
   //       if (isNotEmpty(filter["categoryName"]) &&
   //           item["categoryName"] != filter["categoryName"]) return false;
   //
-  //       if (isNotEmpty(filter["location"]) &&
-  //           item["location"] != filter["location"]) return false;
   //
   //       if (isNotEmpty(filter["type"]) &&
   //           item["type"] != filter["type"]) return false;
@@ -246,10 +246,7 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
   //   });
   // }
 
-
-// 🔹 Function to show error in Snackbar
-
-
+  // 🔹 Function to show error in Snackbar
 
   void applyFilter(Map<String, dynamic> filter) {
     setState(() {
@@ -306,19 +303,19 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
 
       filteredItems = items.where((item) {
         if (isNotEmpty(filter["itemName"]) &&
-            item["itemName"] != filter["itemName"]) return false;
+            item["itemName"] != filter["itemName"])
+          return false;
 
         if (isNotEmpty(filter["categoryName"]) &&
-            item["categoryName"] != filter["categoryName"]) return false;
+            item["categoryName"] != filter["categoryName"])
+          return false;
 
-        if (isNotEmpty(filter["location"]) &&
-            item["location"] != filter["location"]) return false;
-
-        if (isNotEmpty(filter["type"]) &&
-            item["type"] != filter["type"]) return false;
+        if (isNotEmpty(filter["type"]) && item["type"] != filter["type"])
+          return false;
 
         if (isNotEmpty(filter["sevakName"]) &&
-            item["sevakName"] != filter["sevakName"]) return false;
+            item["sevakName"] != filter["sevakName"])
+          return false;
 
         // 🔹 Filter by item creation date
         DateTime? itemDate = DateTime.tryParse(item["date"]);
@@ -335,16 +332,22 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
 
         // 🔹 Filter by expiry date
         final expiryStr = item["expiryDate"];
-        if (expiryStr == null || expiryStr is! String || expiryStr.isEmpty) return false;
+        if (expiryStr == null || expiryStr is! String || expiryStr.isEmpty)
+          return false;
 
         DateTime? itemExpDate = DateTime.tryParse(expiryStr);
         if (itemExpDate == null) return false;
 
         if (expirystartDate != null) {
           DateTime maxExp = expiryendDate != null
-              ? expiryendDate.add(Duration(days: 1)).subtract(Duration(seconds: 1))
-              : expirystartDate.add(Duration(days: 1)).subtract(Duration(seconds: 1));
-          if (itemExpDate.isBefore(expirystartDate) || itemExpDate.isAfter(maxExp)) {
+              ? expiryendDate
+                    .add(Duration(days: 1))
+                    .subtract(Duration(seconds: 1))
+              : expirystartDate
+                    .add(Duration(days: 1))
+                    .subtract(Duration(seconds: 1));
+          if (itemExpDate.isBefore(expirystartDate) ||
+              itemExpDate.isAfter(maxExp)) {
             return false;
           }
         }
@@ -359,24 +362,26 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
     });
   }
 
-
-
   void showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error,
-                color: Colors.white, size: 30), // White error icon
+            Icon(
+              Icons.error,
+              color: Colors.white,
+              size: 30,
+            ), // White error icon
             SizedBox(width: 8), // Space between icon and text
             Expanded(
               child: Text(
                 message,
                 style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold),
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.start,
               ),
             ),
@@ -391,9 +396,7 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
   void openFilterDialog() {
     showDialog(
       context: context,
-      builder: (context) => FilterDialogueBox(
-        onApplyFilter: applyFilter,
-      ),
+      builder: (context) => FilterDialogueBox(onApplyFilter: applyFilter),
     );
   }
 
@@ -427,9 +430,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                 onChanged: (query) {
                   setState(() {
                     filteredItems = items.where((item) {
-                      return item["itemName"]
-                              ?.toLowerCase()
-                              .contains(query.toLowerCase()) ??
+                      return item["itemName"]?.toLowerCase().contains(
+                            query.toLowerCase(),
+                          ) ??
                           false;
                     }).toList();
                   });
@@ -488,18 +491,18 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
             child: isLoading
                 ? const Center(child: SpinKitFadingCircle(color: kOrange))
                 : filteredItems.isEmpty
-                    ? _buildEmptyState()
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                        itemCount: filteredItems.length + 1,
-                        itemBuilder: (context, index) {
-                          if (index == 0) {
-                            return _buildSummaryCard();
-                          }
-                          var item = filteredItems[index - 1];
-                          return _buildItemCard(item);
-                        },
-                      ),
+                ? _buildEmptyState()
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    itemCount: filteredItems.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return _buildSummaryCard();
+                      }
+                      var item = filteredItems[index - 1];
+                      return _buildItemCard(item);
+                    },
+                  ),
           ),
         ],
       ),
@@ -535,17 +538,16 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                       isFilterApplied
                           ? 'Showing filtered report results'
                           : 'Browse add and remove history',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        color: kTextSecondary,
-                      ),
+                      style: TextStyle(fontSize: 12.5, color: kTextSecondary),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: kOrangeLight,
                   borderRadius: BorderRadius.circular(16),
@@ -602,7 +604,11 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
               color: kOrangeLight,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(Icons.assessment_rounded, color: kOrange, size: 22),
+            child: const Icon(
+              Icons.assessment_rounded,
+              color: kOrange,
+              size: 22,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -641,7 +647,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              value == 'add' ? Icons.add_circle_outline_rounded : Icons.remove_circle_outline_rounded,
+              value == 'add'
+                  ? Icons.add_circle_outline_rounded
+                  : Icons.remove_circle_outline_rounded,
               size: 18,
               color: isSelected ? Colors.white : kTextSecondary,
             ),
@@ -660,12 +668,14 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
     );
   }
 
-
   Widget _buildItemCard(dynamic item) {
     String formattedExpiry = "N/A";
-    if (item["expiryDate"] != null && item["expiryDate"].toString().isNotEmpty) {
+    if (item["expiryDate"] != null &&
+        item["expiryDate"].toString().isNotEmpty) {
       try {
-        formattedExpiry = DateFormat('dd-MM-yyyy').format(DateTime.parse(item["expiryDate"]));
+        formattedExpiry = DateFormat(
+          'dd-MM-yyyy',
+        ).format(DateTime.parse(item["expiryDate"]));
       } catch (e) {
         formattedExpiry = "Invalid Date";
       }
@@ -688,107 +698,113 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  item["itemName"] ?? "No Name",
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: kTextPrimary,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    item["itemName"] ?? "No Name",
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: kTextPrimary,
+                    ),
                   ),
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: item["action"] == "add"
-                      ? const Color(0xFF22A45D)
-                      : const Color(0xFFE05050),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  item["action"] == "add" ? "Add" : "Remove",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: item["action"] == "add"
+                        ? const Color(0xFF22A45D)
+                        : const Color(0xFFE05050),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    item["action"] == "add" ? "Add" : "Remove",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _infoText("Category", item["categoryName"]),
-                    const SizedBox(height: 10),
-                    _infoText("Category (Guj)", item["categoryGujName"]),
-                    const SizedBox(height: 10),
-                    _infoText("Location", item["location"]),
-                    const SizedBox(height: 10),
-                    _infoText(
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _infoText("Category", item["categoryName"]),
+                      const SizedBox(height: 10),
+                      _infoText("Category (Guj)", item["categoryGujName"]),
+                      const SizedBox(height: 10),
+                      _infoText(
                         "Sevak Name",
                         item["sevakName"]?.isNotEmpty == true
                             ? item["sevakName"]
-                            : "N/A"),
-                  ],
+                            : "N/A",
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _infoText("Qty", "${item["qty"]} ${item["unit"]}"),
-                    const SizedBox(height: 10),
-                    _infoText("Type", item["type"]),
-                    const SizedBox(height: 10),
-                    _infoText(
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _infoText("Qty", "${item["qty"]} ${item["unit"]}"),
+                      const SizedBox(height: 10),
+                      _infoText("Type", item["type"]),
+                      const SizedBox(height: 10),
+                      _infoText(
                         "Sevak No",
                         item["sevakNo"]?.isNotEmpty == true
                             ? item["sevakNo"]
-                            : "N/A"),
-                    const SizedBox(height: 10),
-                    _infoText("Date", item["date"].toString().split("T")[0]),
-                  ],
+                            : "N/A",
+                      ),
+                      const SizedBox(height: 10),
+                      _infoText("Date", item["date"].toString().split("T")[0]),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
 
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Colors.deepOrange, Colors.orange],
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Colors.deepOrange, Colors.orange],
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    bottomRight: Radius.circular(8),
+                    topLeft: Radius.circular(8),
+                  ),
                 ),
-                borderRadius: const BorderRadius.only(
-                  bottomRight: Radius.circular(8),
-                  topLeft: Radius.circular(8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
                 ),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Text(
-                "Expiry Dt : $formattedExpiry",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11.5,
+                child: Text(
+                  "Expiry Dt : $formattedExpiry",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11.5,
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }

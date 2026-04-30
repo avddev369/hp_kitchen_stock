@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
-import 'package:klitchen_stock/ui/controllers/filterItemsController.dart' show FilteredItemsController;
+import 'package:klitchen_stock/ui/controllers/filterItemsController.dart'
+    show FilteredItemsController;
 import 'package:klitchen_stock/ui/models/items/filterItems.dart';
-import 'package:klitchen_stock/ui/views/showitemsDetails.dart' show ItemDetailScreen;
+import 'package:klitchen_stock/ui/views/showitemsDetails.dart'
+    show ItemDetailScreen;
 import '../../widgets/addDialogbox.dart';
 
 class FilteredItemsScreen extends StatefulWidget {
@@ -12,10 +14,12 @@ class FilteredItemsScreen extends StatefulWidget {
   final String? categoryName;
   final String? qty;
 
-
-
-  FilteredItemsScreen({Key? key, required this.categoryId, required this.categoryName,this.qty})
-      : super(key: key);
+  FilteredItemsScreen({
+    Key? key,
+    required this.categoryId,
+    required this.categoryName,
+    this.qty,
+  }) : super(key: key);
 
   @override
   _FilteredItemsScreenState createState() => _FilteredItemsScreenState();
@@ -30,7 +34,7 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
   static const Color kBorder = Color(0xFFEEEFF4);
   static const Color kTextPrimary = Color(0xFF1A1D23);
   static const Color kTextSecondary = Color(0xFF9599B0);
-  String _selectedGodown = 'All';
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -39,43 +43,19 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
   }
 
   getItems() async {
+    setState(() {
+      _isLoading = true;
+    });
     await _fc.GetFilteredItems(widget.categoryId);
-  }
-
-  List<String> get _godownOptions {
-    final locations = _fc.filteredItems
-        .map((item) => item.location.toString().trim())
-        .where((location) => location.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort();
-    return ['All', ...locations];
-  }
-
-  List<FilterItem> get _visibleItems {
-    if (_selectedGodown == 'All') {
-      return _fc.filteredItems.toList();
-    }
-
-    return _fc.filteredItems
-        .where((item) => item.location.toString().trim() == _selectedGodown)
-        .toList();
-  }
-
-  Map<String, List<FilterItem>> get _groupedItems {
-    final Map<String, List<FilterItem>> grouped = {};
-
-    for (final item in _visibleItems) {
-      grouped.putIfAbsent(item.engName, () => <FilterItem>[]).add(item);
-    }
-
-    final sortedKeys = grouped.keys.toList()..sort();
-    return {for (final key in sortedKeys) key: grouped[key]!};
+    if (!mounted) return;
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => Scaffold(
+    return Scaffold(
       backgroundColor: kBackground,
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -109,137 +89,23 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
       ),
       body: Column(
         children: [
-          _buildFilterSection(),
           Expanded(
-            child: _fc.filteredItems.isEmpty
+            child: _isLoading
                 ? const Center(
-                    child: SpinKitFadingCircle(color: kOrange, size: 44),
-                  )
-                : _groupedItems.isEmpty
-                    ? _buildEmptyFilterState()
+              child: SpinKitFadingCircle(color: kOrange, size: 44),
+            )
+                : _fc.filteredItems.isEmpty
+                ? _buildEmptyFilterState()
                 : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                        itemCount: _groupedItems.length + 1,
-                        itemBuilder: (context, index) {
-                          if (index == 0) {
-                            return _buildSummaryCard(_groupedItems.length);
-                          }
-
-                          final entry = _groupedItems.entries.elementAt(index - 1);
-                          return _buildItemGroupCard(context, entry.value);
-                        },
-                      ),
-          ),
-        ],
-      ),
-    ));
-  }
-
-  Widget _buildFilterSection() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: kBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Godown Filter',
-            style: GoogleFonts.poppins(
-              color: kTextPrimary,
-              fontSize: 15.5,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Filter items by selected godown',
-            style: GoogleFonts.poppins(
-              color: kTextSecondary,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFFAF6),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFFFE6DA)),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _godownOptions.contains(_selectedGodown)
-                    ? _selectedGodown
-                    : 'All',
-                isExpanded: true,
-                borderRadius: BorderRadius.circular(16),
-                dropdownColor: Colors.white,
-                icon: Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: kOrange,
-                    size: 18,
-                  ),
-                ),
-                style: GoogleFonts.poppins(
-                  color: kTextPrimary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-                items: _godownOptions
-                    .map(
-                      (godown) => DropdownMenuItem<String>(
-                        value: godown,
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 30,
-                              height: 30,
-                              decoration: BoxDecoration(
-                                color: kOrangeLight,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.location_on_outlined,
-                                color: kOrange,
-                                size: 16,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                godown,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.poppins(
-                                  color: kTextPrimary,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value == null) return;
-                  setState(() {
-                    _selectedGodown = value;
-                  });
-                },
-              ),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              itemCount: _fc.filteredItems.length + 1,
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return _buildSummaryCard(_fc.filteredItems.length);
+                }
+                final item = _fc.filteredItems[index - 1];
+                return _buildItemCard(context, item);
+              },
             ),
           ),
         ],
@@ -272,9 +138,7 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  _selectedGodown == 'All'
-                      ? 'Open an item to view its godown-wise stock rows'
-                      : 'Showing items for $_selectedGodown',
+                  'Tap a card for details or use the actions directly',
                   style: GoogleFonts.poppins(
                     fontSize: 12.5,
                     color: kTextSecondary,
@@ -325,7 +189,7 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No items in this godown',
+              'No items available',
               style: GoogleFonts.poppins(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
@@ -334,7 +198,7 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Try a different godown filter to view available items.',
+              'Items will appear here when stock is available.',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 12,
@@ -348,14 +212,7 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
     );
   }
 
-  Widget _buildItemGroupCard(
-    BuildContext context,
-    List<FilterItem> godownItems,
-  ) {
-    final firstItem = godownItems.first;
-    final totalQty = godownItems.fold<int>(0, (sum, item) => sum + item.qty);
-    final unit = godownItems.isNotEmpty ? godownItems.first.unit : '';
-
+  Widget _buildItemCard(BuildContext context, FilterItem item) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
@@ -373,180 +230,137 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(20),
-        child: Theme(
-          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-          child: ExpansionTile(
-            tilePadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
-            childrenPadding: const EdgeInsets.fromLTRB(13, 0, 13, 13),
-            iconColor: kOrange,
-            collapsedIconColor: kTextSecondary,
-            leading: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFFF0EA), Color(0xFFFFE0D1)],
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ItemDetailScreen(
+                  itemId: item.itemId,
+                  itemName: item.engName,
+                  qty: item.qty,
                 ),
-                borderRadius: BorderRadius.circular(14),
               ),
-              child: const Icon(
-                Icons.kitchen_rounded,
-                color: kOrange,
-                size: 20,
-              ),
-            ),
-            title: Text(
-              firstItem.engName,
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w700,
-                fontSize: 14.5,
-                color: kTextPrimary,
-              ),
-            ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (firstItem.gujName.trim().isNotEmpty)
-                    Text(
-                      firstItem.gujName,
-                      style: GoogleFonts.poppins(
-                        fontSize: 12.5,
-                        color: kTextSecondary,
-                        fontWeight: FontWeight.w500,
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(13),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFF0EA), Color(0xFFFFE0D1)],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.kitchen_rounded,
+                        color: kOrange,
+                        size: 20,
                       ),
                     ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${godownItems.length} godown${godownItems.length == 1 ? '' : 's'} | $totalQty $unit',
-                    style: GoogleFonts.poppins(
-                      fontSize: 11.5,
-                      color: kTextSecondary,
-                      fontWeight: FontWeight.w500,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.engName,
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14.5,
+                              color: kTextPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (item.gujName.trim().isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              item.gujName,
+                              style: GoogleFonts.poppins(
+                                fontSize: 12.5,
+                                color: kTextSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                          const SizedBox(height: 4),
+                          Text(
+                            '${item.qty} ${item.unit}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11.5,
+                              color: kTextSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            children: godownItems
-                .map((item) => _buildGodownRow(context, item))
-                .toList(),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGodownRow(BuildContext context, FilterItem item) {
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFAF6),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFFEEE4)),
-      ),
-      child: Column(
-        children: [
-          InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ItemDetailScreen(
-                    itemId: item.itemId,
-                    itemName: item.engName,
-                    qty: item.qty,
-                  ),
-                ),
-              );
-            },
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.location_on_outlined,
-                  color: kOrange,
-                  size: 16,
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    item.location.isNotEmpty ? item.location : 'Unknown location',
-                    style: GoogleFonts.poppins(
-                      fontSize: 11.5,
-                      color: kTextPrimary,
-                      fontWeight: FontWeight.w600,
+                    Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.chevron_right_rounded,
+                        color: kTextSecondary,
+                        size: 18,
+                      ),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  '${item.qty} ${item.unit}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 11.5,
-                    color: kTextSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.chevron_right_rounded,
-                    color: kTextSecondary,
-                    size: 18,
-                  ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildActionButton(
+                        label: 'Add',
+                        icon: Icons.add_rounded,
+                        onTap: () async {
+                          await showAddItemDialog(
+                            context,
+                            item.itemId,
+                            item.categoryId,
+                            widget.categoryName ?? '',
+                            item.engName,
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildActionButton(
+                        label: 'Use',
+                        icon: Icons.remove_rounded,
+                        onTap: () {
+                          showRemoveItemDialog(
+                            context,
+                            item.itemId,
+                            item.categoryId,
+                            widget.categoryName ?? '',
+                            item.engName,
+                          );
+                        },
+                        isPrimary: false,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _buildActionButton(
-                  label: 'Add',
-                  icon: Icons.add_rounded,
-                  onTap: () async {
-                    await showAddItemDialog(
-                      context,
-                      item.itemId,
-                      item.categoryId,
-                      widget.categoryName ?? '',
-                      item.engName,
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildActionButton(
-                  label: 'Use',
-                  icon: Icons.remove_rounded,
-                  onTap: () {
-                    showRemoveItemDialog(
-                      context,
-                      item.itemId,
-                      item.categoryId,
-                      widget.categoryName ?? '',
-                      item.engName,
-                    );
-                  },
-                  isPrimary: false,
-                ),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -569,11 +383,7 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 14,
-              color: isPrimary ? Colors.white : kOrange,
-            ),
+            Icon(icon, size: 14, color: isPrimary ? Colors.white : kOrange),
             const SizedBox(width: 4),
             Text(
               label,
