@@ -1,807 +1,784 @@
 import 'dart:convert';
-import 'package:dropdown_button2/dropdown_button2.dart';
-import 'package:http/http.dart'as http;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 import 'package:klitchen_stock/ui/controllers/filterItemsController.dart';
 import '../api/api.dart';
 import '../helper/preferences.dart';
 
+// ─── Shared colours ───────────────────────────────────────────────────────────
+const Color _kOrange = Color(0xFFFF6B35);
+const Color _kOrangeLight = Color(0xFFFFF0EA);
+const Color _kBorder = Color(0xFFEEEFF4);
+const Color _kBg = Color(0xFFF7F8FA);
+const Color _kTextPrimary = Color(0xFF1A1D23);
+const Color _kTextSecondary = Color(0xFF9599B0);
 
-// 🔹 Common Dropdown Function
-Widget buildDropdown(
-    String label,
-    List<String> items,
-    String? selectedValue,
-    Function(String?) onChanged,
-    ) {
-  return StatefulBuilder(
-    builder: (context, setState) {
-      String? errorText;
+// ─── Add Item Screen ───────────────────────────────────────────────────────────
+class AddItemScreen extends StatefulWidget {
+  final int itemId;
+  final int categoryId;
+  final String categoryName;
+  final String itemName;
 
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
+  const AddItemScreen({
+    Key? key,
+    required this.itemId,
+    required this.categoryId,
+    required this.categoryName,
+    required this.itemName,
+  }) : super(key: key);
+
+  @override
+  State<AddItemScreen> createState() => _AddItemScreenState();
+}
+
+class _AddItemScreenState extends State<AddItemScreen> {
+  final FilteredItemsController _fc = Get.find<FilteredItemsController>();
+
+  final _quantityController = TextEditingController();
+  final _sevakNameController = TextEditingController();
+  final _sevakNoController = TextEditingController();
+  final _expiryController = TextEditingController();
+
+  String? _selectedType;
+  String? _selectedGodown;
+  bool _showSevakFields = false;
+  bool _loadingGodowns = true;
+  bool _submitting = false;
+  List<String> _godownOptions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchGodowns();
+  }
+
+  Future<void> _fetchGodowns() async {
+    try {
+      _godownOptions = await Api.getGodownNames();
+    } catch (_) {
+      _godownOptions = [];
+    }
+    if (mounted) setState(() => _loadingGodowns = false);
+  }
+
+  void _showSnack(String msg, {bool error = true}) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg, style: GoogleFonts.poppins(fontSize: 13)),
+      backgroundColor: error ? Colors.red : Colors.green,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      margin: const EdgeInsets.all(16),
+    ));
+  }
+
+  Future<void> _submit() async {
+    final qtyText = _quantityController.text.trim();
+    if (qtyText.isEmpty || int.tryParse(qtyText) == null || int.parse(qtyText) <= 0) {
+      _showSnack('Quantity must be a positive number!'); return;
+    }
+    if (_selectedType == null) { _showSnack('Please select a Type!'); return; }
+    if (_selectedGodown == null || _selectedGodown!.trim().isEmpty) {
+      _showSnack('Please select a Godown!'); return;
+    }
+    if (_selectedType == 'Seva') {
+      if (_sevakNameController.text.trim().isEmpty || _sevakNoController.text.trim().isEmpty) {
+        _showSnack('Sevak Name and Number are required for Seva!'); return;
+      }
+      if (!RegExp(r'^\d{10}$').hasMatch(_sevakNoController.text.trim())) {
+        _showSnack('Sevak No must be exactly 10 digits!'); return;
+      }
+    }
+
+    setState(() => _submitting = true);
+    try {
+      String? username = await Preferences.getUserName();
+      if (username == null || username.isEmpty) throw Exception('Username not available.');
+
+      final body = {
+        'table': 'manage',
+        'qty': int.parse(qtyText),
+        'itemId': widget.itemId,
+        'type': _selectedType!,
+        'sevakName': _showSevakFields ? _sevakNameController.text.trim() : '',
+        'sevakNo': _showSevakFields ? _sevakNoController.text.trim() : '',
+        'location': _selectedGodown,
+        'itemTo': 'Add',
+        'expiryDate': _expiryController.text.trim(),
+        'createdBy': 1,
+      };
+
+      final response = await http.post(
+        Uri.parse('http://27.116.52.24:8060/manageItem'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        _showSnack('Item added successfully!', error: false);
+        await Future.delayed(const Duration(milliseconds: 1200));
+        await _fc.GetFilteredItems(widget.categoryId);
+        if (mounted) Navigator.pop(context);
+      } else {
+        _showSnack('Failed to add item: ${response.statusCode}');
+      }
+    } catch (e) {
+      _showSnack('Error: $e');
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    _sevakNameController.dispose();
+    _sevakNoController.dispose();
+    _expiryController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _kBg,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: _kTextPrimary),
+          onPressed: () => Navigator.pop(context),
+        ),
+        titleSpacing: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Add Item',
+                style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w700, color: _kTextPrimary)),
+            Text(widget.categoryName,
+                style: GoogleFonts.poppins(fontSize: 11.5, color: _kTextSecondary)),
+          ],
+        ),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _ItemInfoBanner(itemName: widget.itemName),
+                  const SizedBox(height: 14),
+                  _SectionCard(children: [
+                    _FormField(label: 'Item Name', child: _readonlyField(widget.itemName)),
+                    const SizedBox(height: 12),
+                    _FormField(
+                      label: 'Quantity',
+                      child: _inputField(
+                        controller: _quantityController,
+                        hint: 'Enter quantity',
+                        inputType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _FormField(
+                      label: 'Expiry Date',
+                      child: GestureDetector(
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime(2101),
+                            builder: (ctx, child) => Theme(
+                              data: Theme.of(ctx).copyWith(
+                                colorScheme: const ColorScheme.light(primary: _kOrange),
+                              ),
+                              child: child!,
+                            ),
+                          );
+                          if (picked != null) {
+                            setState(() => _expiryController.text = picked.toLocal().toString().split(' ')[0]);
+                          }
+                        },
+                        child: AbsorbPointer(
+                          child: _inputField(
+                            controller: _expiryController,
+                            hint: 'Select date',
+                            suffixIcon: const Icon(Icons.calendar_today_rounded, size: 16, color: _kTextSecondary),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 12),
+                  _SectionCard(children: [
+                    _FormField(
+                      label: 'Type',
+                      child: _dropdownField(
+                        hint: 'Select type',
+                        value: _selectedType,
+                        items: const ['Purchase', 'Seva'],
+                        onChanged: (v) => setState(() {
+                          _selectedType = v;
+                          _showSevakFields = v == 'Seva';
+                        }),
+                      ),
+                    ),
+                    if (_showSevakFields) ...[
+                      const SizedBox(height: 12),
+                      _FormField(
+                        label: 'Sevak Name',
+                        child: _inputField(controller: _sevakNameController, hint: 'Enter sevak name'),
+                      ),
+                      const SizedBox(height: 12),
+                      _FormField(
+                        label: 'Sevak No',
+                        child: _inputField(
+                          controller: _sevakNoController,
+                          hint: '10-digit mobile number',
+                          inputType: TextInputType.phone,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
+                        ),
+                      ),
+                    ],
+                  ]),
+                  const SizedBox(height: 12),
+                  _SectionCard(children: [
+                    _FormField(
+                      label: 'Godown',
+                      child: _loadingGodowns
+                          ? const _GodownLoader()
+                          : _godownOptions.isEmpty
+                              ? _noGodownText()
+                              : _dropdownField(
+                                  hint: 'Select godown',
+                                  value: _selectedGodown,
+                                  items: _godownOptions,
+                                  onChanged: (v) => setState(() => _selectedGodown = v),
+                                ),
+                    ),
+                  ]),
+                  const SizedBox(height: 80),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: _BottomBar(
+        label: 'Add Item',
+        color: _kOrange,
+        submitting: _submitting,
+        onTap: _submit,
+      ),
+    );
+  }
+}
+
+// ─── Remove Item Screen ────────────────────────────────────────────────────────
+class RemoveItemScreen extends StatefulWidget {
+  final int itemId;
+  final int categoryId;
+  final String categoryName;
+  final String itemName;
+
+  const RemoveItemScreen({
+    Key? key,
+    required this.itemId,
+    required this.categoryId,
+    required this.categoryName,
+    required this.itemName,
+  }) : super(key: key);
+
+  @override
+  State<RemoveItemScreen> createState() => _RemoveItemScreenState();
+}
+
+class _RemoveItemScreenState extends State<RemoveItemScreen> {
+  final FilteredItemsController _fc = Get.find<FilteredItemsController>();
+
+  final _quantityController = TextEditingController();
+  final _sevakNameController = TextEditingController();
+  final _sevakNoController = TextEditingController();
+
+  String? _selectedType;
+  String? _selectedGodown;
+  bool _showSevakFields = false;
+  bool _loadingGodowns = true;
+  bool _submitting = false;
+  List<String> _godownOptions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchGodowns();
+  }
+
+  Future<void> _fetchGodowns() async {
+    try {
+      _godownOptions = await Api.getGodownNames();
+    } catch (_) {
+      _godownOptions = [];
+    }
+    if (mounted) setState(() => _loadingGodowns = false);
+  }
+
+  void _showSnack(String msg, {bool error = true}) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg, style: GoogleFonts.poppins(fontSize: 13)),
+      backgroundColor: error ? Colors.red : Colors.green,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      margin: const EdgeInsets.all(16),
+    ));
+  }
+
+  Future<void> _submit() async {
+    final qtyText = _quantityController.text.trim();
+    if (qtyText.isEmpty || int.tryParse(qtyText) == null || int.parse(qtyText) <= 0) {
+      _showSnack('Quantity must be a positive number!'); return;
+    }
+    if (_selectedType == null) { _showSnack('Please select a Type!'); return; }
+    if (_selectedGodown == null || _selectedGodown!.trim().isEmpty) {
+      _showSnack('Please select a Godown!'); return;
+    }
+    if (_selectedType == 'Seva') {
+      if (_sevakNameController.text.trim().isEmpty || _sevakNoController.text.trim().isEmpty) {
+        _showSnack('Sevak Name and Number are required for Seva!'); return;
+      }
+      if (!RegExp(r'^\d{10}$').hasMatch(_sevakNoController.text.trim())) {
+        _showSnack('Sevak No must be exactly 10 digits!'); return;
+      }
+    }
+
+    setState(() => _submitting = true);
+    try {
+      String? username = await Preferences.getUserName();
+      if (username == null || username.isEmpty) throw Exception('Username not available.');
+
+      final body = {
+        'table': 'manage',
+        'qty': int.parse(qtyText),
+        'itemId': widget.itemId,
+        'type': _selectedType!,
+        'sevakName': _showSevakFields ? _sevakNameController.text.trim() : '',
+        'sevakNo': _showSevakFields ? _sevakNoController.text.trim() : '',
+        'location': _selectedGodown,
+        'itemTo': 'Remove',
+        'createdBy': 1,
+      };
+
+      final response = await http.post(
+        Uri.parse('http://27.116.52.24:8060/manageItem'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        _showSnack('Item removed successfully!', error: false);
+        await Future.delayed(const Duration(milliseconds: 1200));
+        await _fc.GetFilteredItems(widget.categoryId);
+        if (mounted) Navigator.pop(context);
+      } else {
+        _showSnack('Failed to remove item: ${response.statusCode}');
+      }
+    } catch (e) {
+      _showSnack('Error: $e');
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    _sevakNameController.dispose();
+    _sevakNoController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _kBg,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: _kTextPrimary),
+          onPressed: () => Navigator.pop(context),
+        ),
+        titleSpacing: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Use Item',
+                style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w700, color: _kTextPrimary)),
+            Text(widget.categoryName,
+                style: GoogleFonts.poppins(fontSize: 11.5, color: _kTextSecondary)),
+          ],
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: errorText == null
-                        ? Colors.orange.withOpacity(0.2)
-                        : Colors.red, // Show red border on error
-                    width: 1,
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: errorText == null
-                        ? Colors.orange.withOpacity(0.5)
-                        : Colors.red, // Show red border if error
-                    width: 1,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.deepOrange, width: 2),
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              ),
-              isExpanded: true,
-              hint: Text(label),
-              value: selectedValue,
-              onChanged: (newValue) {
-                setState(() {
-                  selectedValue = newValue;
-                  errorText = newValue == null ? "$label is required!" : null;
-                });
-                onChanged(newValue);
-              },
-              items: items.map((value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-            ),
-            if (errorText != null) // Show error message only if there's an error
-              Padding(
-                padding: const EdgeInsets.only(top: 4, left: 4),
-                child: Text(
-                  errorText!,
-                  style: const TextStyle(color: Colors.red, fontSize: 12),
+            _ItemInfoBanner(itemName: widget.itemName, isRemove: true),
+            const SizedBox(height: 14),
+            _SectionCard(children: [
+              _FormField(label: 'Item Name', child: _readonlyField(widget.itemName)),
+              const SizedBox(height: 12),
+              _FormField(
+                label: 'Quantity',
+                child: _inputField(
+                  controller: _quantityController,
+                  hint: 'Enter quantity',
+                  inputType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
               ),
+            ]),
+            const SizedBox(height: 12),
+            _SectionCard(children: [
+              _FormField(
+                label: 'Type',
+                child: _dropdownField(
+                  hint: 'Select type',
+                  value: _selectedType,
+                  items: const ['Purchase', 'Seva'],
+                  onChanged: (v) => setState(() {
+                    _selectedType = v;
+                    _showSevakFields = v == 'Seva';
+                  }),
+                ),
+              ),
+              if (_showSevakFields) ...[
+                const SizedBox(height: 12),
+                _FormField(
+                  label: 'Sevak Name',
+                  child: _inputField(controller: _sevakNameController, hint: 'Enter sevak name'),
+                ),
+                const SizedBox(height: 12),
+                _FormField(
+                  label: 'Sevak No',
+                  child: _inputField(
+                    controller: _sevakNoController,
+                    hint: '10-digit mobile number',
+                    inputType: TextInputType.phone,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
+                  ),
+                ),
+              ],
+            ]),
+            const SizedBox(height: 12),
+            _SectionCard(children: [
+              _FormField(
+                label: 'Godown',
+                child: _loadingGodowns
+                    ? const _GodownLoader()
+                    : _godownOptions.isEmpty
+                        ? _noGodownText()
+                        : _dropdownField(
+                            hint: 'Select godown',
+                            value: _selectedGodown,
+                            items: _godownOptions,
+                            onChanged: (v) => setState(() => _selectedGodown = v),
+                          ),
+              ),
+            ]),
+            const SizedBox(height: 80),
           ],
         ),
-      );
-    },
-  );
-}
-
-// 🔹 Dialog for Adding Item
-
-
-
-
-
-
-Future<void> showAddItemDialog(BuildContext context, int itemId, int categoryId, String categoryName, String itemName) async {
-  FilteredItemsController _fc = Get.find<FilteredItemsController>();
-  TextEditingController itemNameController = TextEditingController(text: itemName);
-  TextEditingController quantityController = TextEditingController();
-  TextEditingController sevakNameController = TextEditingController();
-  TextEditingController sevakNoController = TextEditingController();
-  TextEditingController ExpiryDateController = TextEditingController();
-
-  String? selectedType;
-  String? selectedGodown;
-  bool showSevakFields = false;
-  List<String> godownOptions = [];
-
-  try {
-    godownOptions = await Api.getGodownNames();
-  } catch (_) {
-    godownOptions = [];
+      ),
+      bottomNavigationBar: _BottomBar(
+        label: 'Confirm Use',
+        color: const Color(0xFFE53935),
+        submitting: _submitting,
+        onTap: _submit,
+      ),
+    );
   }
+}
 
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      bool isLoading = false; // Loading state
+// ─── Shared Widgets ────────────────────────────────────────────────────────────
 
-      return StatefulBuilder(
-        builder: (context, setState) {
-          Future<void> addItem() async {
-            setState(() => isLoading = true); // Show loader
+class _ItemInfoBanner extends StatelessWidget {
+  final String itemName;
+  final bool isRemove;
+  const _ItemInfoBanner({required this.itemName, this.isRemove = false});
 
-            // Validation for Quantity
-            String qtyText = quantityController.text.trim();
-            if (qtyText.isEmpty || int.tryParse(qtyText) == null || int.parse(qtyText) <= 0) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Quantity must be a positive number!"),
-                  backgroundColor: Colors.red,
-                ),
-              );
-              setState(() => isLoading = false);
-              return;
-            }
-
-            // Validation for Type selection
-            if (selectedType == null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Please select a Type!"),
-                  backgroundColor: Colors.red,
-                ),
-              );
-              setState(() => isLoading = false);
-              return;
-            }
-
-            if (selectedGodown == null || selectedGodown!.trim().isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Please select a Godown!"),
-                  backgroundColor: Colors.red,
-                ),
-              );
-              setState(() => isLoading = false);
-              return;
-            }
-
-            // Validation for Seva type
-// Validation for Seva type
-            if (selectedType == "Seva") {
-              if (sevakNameController.text.trim().isEmpty || sevakNoController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Sevak Name and Number are required for Seva!"),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                setState(() => isLoading = false);
-                return;
-              }
-
-              // Validate Sevak No (should be exactly 10 digits)
-              String sevakNo = sevakNoController.text.trim();
-              if (!RegExp(r'^\d{10}$').hasMatch(sevakNo)) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Sevak No must be exactly 10 digits!"),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                setState(() => isLoading = false);
-                return;
-              }
-            }
-
-
-            // Proceed with API call
-            const String apiUrl = "http://27.116.52.24:8060/manageItem";
-            String? username = await Preferences.getUserName();
-            if (username == null || username.isEmpty) {
-              throw Exception("Username is not available.");
-            }
-
-            int quantity = int.parse(qtyText);
-
-            Map<String, dynamic> requestBody = {
-              "table": "manage",
-              "qty": quantity,
-              "itemId": itemId,
-              "type": selectedType!,
-              "sevakName": showSevakFields ? sevakNameController.text.trim() : "",
-              "sevakNo": showSevakFields ? sevakNoController.text.trim() : "",
-              "location": selectedGodown,
-              "itemTo": "Add",
-              "expiryDate": ExpiryDateController.text.trim(),
-              "createdBy": 1
-            };
-
-            try {
-              final response = await http.post(
-                Uri.parse(apiUrl),
-                headers: {"Content-Type": "application/json"},
-                body: jsonEncode(requestBody),
-              );
-
-              if (response.statusCode == 200) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Item added successfully!"),
-                    backgroundColor: Colors.green,
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-
-                await Future.delayed(Duration(milliseconds: 1500)); // Delay for visibility
-                await _fc.GetFilteredItems(categoryId);
-
-                Navigator.pop(context); // Close dialog
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text("Failed to add item: ${response.statusCode}"),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            } catch (error) {
-              print("ERROR: $error");
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text("Error: $error"),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            } finally {
-              setState(() => isLoading = false); // Hide loader
-            }
-          }
-
-          return AlertDialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: isRemove ? const Color(0xFFFFEBEE) : _kOrangeLight,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: isRemove ? const Color(0xFFFFCDD2) : const Color(0xFFFFD8C8),
+              borderRadius: BorderRadius.circular(10),
             ),
-            title: const Text(
-              "Add New Item",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.orange,
-              ),
+            child: Icon(
+              isRemove ? Icons.remove_circle_outline_rounded : Icons.add_circle_outline_rounded,
+              color: isRemove ? const Color(0xFFE53935) : _kOrange,
+              size: 18,
             ),
-            content: SizedBox(
-              width: MediaQuery.of(context).size.width * 0.8,
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.5),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              categoryName,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    _buildHeader("Item Name"),
-                    buildStyledTextField(
-                      controller: itemNameController,
-                      read: true,
-                      isRequired: true,
-
-                      label: "Item Name",
-                    ),
-                    _buildHeader("Quantity"),
-                    buildStyledTextField(
-                      controller: quantityController,
-                      label: "Quantity",
-                      isNumeric: true,
-                      isRequired: true,
-                      keyboardType: TextInputType.number,
-                    ),
-
-                    _buildHeader("Expiry Date"),
-                    GestureDetector(
-                      onTap: () async {
-                        DateTime? pickedDate = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime(2101),
-                        );
-                        if (pickedDate != null) {
-                          setState(() {
-                            ExpiryDateController.text = "${pickedDate.toLocal()}".split(' ')[0];
-                          });
-                        }
-                      },
-                      child: AbsorbPointer(
-                        child: buildStyledTextField(
-                          controller: ExpiryDateController,
-                          label: "",
-                          isRequired: true,
-
-                        ),
-                      ),
-                    ),
-
-                    _buildHeader("Type"),
-                    buildDropdown(
-                      "Type",
-                      ["Purchase", "Seva"],
-                      selectedType,
-                          (value) {
-                        setState(() {
-                          selectedType = value;
-                          showSevakFields = value == "Seva";
-                        });
-                      },
-                    ),
-                    _buildHeader("Godown"),
-                    buildDropdown(
-                      "Godown",
-                      godownOptions,
-                      selectedGodown,
-                      (value) {
-                        setState(() {
-                          selectedGodown = value;
-                        });
-                      },
-                    ),
-                    if (showSevakFields) ...[
-                      buildStyledTextField(
-                        controller: sevakNameController,
-                        label: "Sevak Name",
-                      ),
-                      buildStyledTextField(
-                        controller: sevakNoController,
-                        label: "Sevak No",
-                        keyboardType: TextInputType.phone,
-                      ),
-                    ],
-
-                  ],
-                ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              itemName,
+              style: GoogleFonts.poppins(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w600,
+                color: _kTextPrimary,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            actions: [
-              TextButton(
-                onPressed: isLoading ? null : () => Navigator.pop(context),
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.deepOrange,
-                ),
-                child: const Text("Cancel"),
-              ),
-              ElevatedButton(
-                onPressed: isLoading ? null : addItem,
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                ),
-                child: isLoading
-                    ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  final List<Widget> children;
+  const _SectionCard({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _kBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
+    );
+  }
+}
+
+class _FormField extends StatelessWidget {
+  final String label;
+  final Widget child;
+  const _FormField({required this.label, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: _kTextSecondary,
+            )),
+        const SizedBox(height: 6),
+        child,
+      ],
+    );
+  }
+}
+
+class _GodownLoader extends StatelessWidget {
+  const _GodownLoader();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F3F5),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: _kBorder),
+      ),
+      child: const Center(
+        child: SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(strokeWidth: 2, color: _kOrange),
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomBar extends StatelessWidget {
+  final String label;
+  final Color color;
+  final bool submitting;
+  final VoidCallback onTap;
+  const _BottomBar({required this.label, required this.color, required this.submitting, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
+      child: SizedBox(
+        width: double.infinity,
+        height: 50,
+        child: ElevatedButton(
+          onPressed: submitting ? null : onTap,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color,
+            foregroundColor: Colors.white,
+            disabledBackgroundColor: color.withOpacity(0.5),
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+          ),
+          child: submitting
+              ? const SizedBox(
+                  width: 22, height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
                 )
-                    : const Text("Add"),
-              ),
-            ],
-          );
-        },
-      );
-    },
+              : Text(label,
+                  style: GoogleFonts.poppins(fontSize: 14.5, fontWeight: FontWeight.w700)),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+Widget _readonlyField(String value) {
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+    decoration: BoxDecoration(
+      color: _kOrangeLight,
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(color: const Color(0xFFFFD8C8)),
+    ),
+    child: Text(value,
+        style: GoogleFonts.poppins(fontSize: 13.5, color: _kTextPrimary, fontWeight: FontWeight.w500)),
   );
 }
-Widget _buildHeader(String text) {
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 5, top: 10),
-    child: Text(
-      text,
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-        fontFamily: 'Roboto', // Using Roboto font
-        color: Colors.black87,
+
+Widget _inputField({
+  required TextEditingController controller,
+  required String hint,
+  TextInputType inputType = TextInputType.text,
+  List<TextInputFormatter>? inputFormatters,
+  Widget? suffixIcon,
+}) {
+  return TextField(
+    controller: controller,
+    keyboardType: inputType,
+    inputFormatters: inputFormatters,
+    style: GoogleFonts.poppins(fontSize: 13.5, color: _kTextPrimary),
+    decoration: InputDecoration(
+      hintText: hint,
+      hintStyle: GoogleFonts.poppins(fontSize: 13, color: _kTextSecondary),
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: _kBorder),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: _kOrange, width: 1.5),
       ),
     ),
   );
 }
-Widget buildStyledTextField({
-  required TextEditingController controller,
-  required String label,
-  bool read = false, // Default: editable
-  TextInputType keyboardType = TextInputType.text,
-  bool isRequired = false, // Adds validation for required fields
-  bool isNumeric = false, // Adds numeric validation
+
+Widget _dropdownField({
+  required String hint,
+  required String? value,
+  required List<String> items,
+  required ValueChanged<String?> onChanged,
 }) {
-  return StatefulBuilder(
-    builder: (context, setState) {
-      String? errorText;
-
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: controller,
-              readOnly: read, // If true, make field non-editable
-              keyboardType: keyboardType,
-              style: TextStyle(
-                color: Colors.black, // Uniform text color
-              ),
-              onChanged: (value) {
-                // Validation logic
-                setState(() {
-                  if (isRequired && value.trim().isEmpty) {
-                    errorText = "$label is required!";
-                  } else if (isNumeric) {
-                    int? number = int.tryParse(value);
-                    if (number == null || number <= 0) {
-                      errorText = "$label must be a positive number!";
-                    } else {
-                      errorText = null; // Clear error if valid
-                    }
-                  } else {
-                    errorText = null; // Clear error for non-numeric fields
-                  }
-                });
-              },
-              decoration: InputDecoration(
-                labelText: label,
-                filled: read, // Fill background when read-only
-                fillColor: read ? Colors.orange[50] : Colors.white, // Light gray background
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: read ? Colors.grey : Colors.orange, // Grey border for read-only
-                    width: 2,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: read ? Colors.grey : Colors.deepOrange, // Grey border for read-only
-                    width: 0.5,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            if (errorText != null) // Show error only if there's an error
-              Padding(
-                padding: const EdgeInsets.only(top: 4, left: 4),
-                child: Text(
-                  errorText!,
-                  style: const TextStyle(color: Colors.red, fontSize: 12),
-                ),
-              ),
-          ],
-        ),
-      );
-    },
+  return DropdownButtonFormField<String>(
+    value: value,
+    hint: Text(hint, style: GoogleFonts.poppins(fontSize: 13, color: _kTextSecondary)),
+    onChanged: onChanged,
+    items: items
+        .map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 13.5))))
+        .toList(),
+    decoration: InputDecoration(
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: _kBorder),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: _kOrange, width: 1.5),
+      ),
+    ),
+    dropdownColor: Colors.white,
+    borderRadius: BorderRadius.circular(12),
+    isExpanded: true,
+    icon: const Icon(Icons.keyboard_arrow_down_rounded, color: _kTextSecondary),
   );
 }
 
-
-
-
-// 🔹 Dialog for Removing Item
-Future<void> showRemoveItemDialog(BuildContext context, int itemId,int categoryId, String categoryName,String itemName)async {
-  FilteredItemsController _fc = Get.find<FilteredItemsController>();
-  TextEditingController itemNameController = TextEditingController(text: "${itemName}",);
-  TextEditingController quantityController = TextEditingController();
-  TextEditingController sevakNameController = TextEditingController();
-  TextEditingController sevakNoController = TextEditingController();
-
-  String? selectedType;
-  String? selectedGodown;
-  bool showSevakFields = false;
-  List<String> godownOptions = [];
-
-  try {
-    godownOptions = await Api.getGodownNames();
-  } catch (_) {
-    godownOptions = [];
-  }
-
-
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      bool isLoading = false; // Loading state
-
-      return StatefulBuilder(
-        builder: (context, setState) {
-          Future<void> removeItem() async {
-            setState(() => isLoading = true); // Show loader
-
-            // Validation for Quantity
-            String qtyText = quantityController.text.trim();
-            if (qtyText.isEmpty || int.tryParse(qtyText) == null || int.parse(qtyText) <= 0) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Quantity must be a positive number!"),
-                  backgroundColor: Colors.red,
-                ),
-              );
-              setState(() => isLoading = false);
-              return;
-            }
-
-            // Validation for Type selection
-            if (selectedType == null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Please select a Type!"),
-                  backgroundColor: Colors.red,
-                ),
-              );
-              setState(() => isLoading = false);
-              return;
-            }
-
-            if (selectedGodown == null || selectedGodown!.trim().isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Please select a Godown!"),
-                  backgroundColor: Colors.red,
-                ),
-              );
-              setState(() => isLoading = false);
-              return;
-            }
-
-            // Validation for Seva type
-            // Validation for Seva type
-            if (selectedType == "Seva") {
-              if (sevakNameController.text.trim().isEmpty || sevakNoController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Sevak Name and Number are required for Seva!"),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                setState(() => isLoading = false);
-                return;
-              }
-
-              // Validate Sevak No (should be exactly 10 digits)
-              String sevakNo = sevakNoController.text.trim();
-              if (!RegExp(r'^\d{10}$').hasMatch(sevakNo)) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Sevak No must be exactly 10 digits!"),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                setState(() => isLoading = false);
-                return;
-              }
-            }
-
-
-            const String apiUrl = "http://27.116.52.24:8060/manageItem";
-            String? username = await Preferences.getUserName();
-            if (username == null || username.isEmpty) {
-              throw Exception("Username is not available.");
-            }
-
-            int quantity = int.parse(qtyText);
-
-            Map<String, dynamic> requestBody = {
-              "table": "manage",
-              "qty": quantity,
-              "itemId": itemId,
-              "type": selectedType!,
-              "sevakName": showSevakFields ? sevakNameController.text.trim() : "",
-              "sevakNo": showSevakFields ? sevakNoController.text.trim() : "",
-              "location": selectedGodown,
-
-              "itemTo": "Remove",  // Change from "Add" to "Remove"
-              "createdBy": 1
-            };
-
-            try {
-              final response = await http.post(
-                Uri.parse(apiUrl),
-                headers: {"Content-Type": "application/json"},
-                body: jsonEncode(requestBody),
-              );
-
-              if (response.statusCode == 200) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Item removed successfully!"), // Updated success message
-                    backgroundColor: Colors.green,
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-
-                await Future.delayed(Duration(milliseconds: 1500)); // Delay for visibility
-                await _fc.GetFilteredItems(categoryId);
-
-                Navigator.pop(context); // Close dialog
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text("Failed to remove item: ${response.statusCode}"), // Updated failure message
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            } catch (error) {
-              print("ERROR: $error");
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text("Error: $error"),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            } finally {
-              setState(() => isLoading = false); // Hide loader
-            }
-          }
-
-          return AlertDialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            title: const Text(
-              "Remove Item",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.orange,
-              ),
-            ),
-            content: SizedBox(
-              width: MediaQuery.of(context).size.width * 0.8,
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.5),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              categoryName,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    _buildHeader("Item Name"),
-                    buildStyledTextField(
-                      controller: itemNameController,
-                      read: true,
-                      isRequired: true,
-
-                      label: "Item Name",
-                    ),
-                    _buildHeader("Quantity"),
-                    buildStyledTextField(
-                      controller: quantityController,
-                      label: "Quantity",
-                      isNumeric: true,
-                      isRequired: true,
-                      keyboardType: TextInputType.number,
-                    ),
-                    _buildHeader("Godown"),
-                    if (godownOptions.isNotEmpty)
-                      buildDropdown(
-                        "Godown",
-                        godownOptions,
-                        selectedGodown,
-                        (value) {
-                          setState(() {
-                            selectedGodown = value;
-                          });
-                        },
-                      )
-                    else
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8.0),
-                        child: Text(
-                          "No godown found. Please add godown in location table.",
-                          style: TextStyle(color: Colors.red, fontSize: 12),
-                        ),
-                      ),
-
-                    _buildHeader("Type"),
-                    buildDropdown(
-                      "Type",
-                      ["Purchase", "Seva"],
-                      selectedType,
-                          (value) {
-                        setState(() {
-                          selectedType = value;
-                          showSevakFields = value == "Seva";
-                        });
-                      },
-                    ),
-                    if (showSevakFields) ...[
-                      buildStyledTextField(
-                        controller: sevakNameController,
-                        label: "Sevak Name",
-                      ),
-                      buildStyledTextField(
-                        controller: sevakNoController,
-                        label: "Sevak No",
-                        keyboardType: TextInputType.phone,
-                      ),
-                    ],
-
-                  ],
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: isLoading ? null : () => Navigator.pop(context),
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.deepOrange,
-                ),
-                child: const Text("Cancel"),
-              ),
-              ElevatedButton(
-                onPressed: isLoading ? null : removeItem,
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                ),
-                child: isLoading
-                    ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-                    : const Text("Remove"),
-              ),
-            ],
-          );
-        },
-      );
-    },
+Widget _noGodownText() {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Text(
+      'No godown found. Please add godown in location table.',
+      style: GoogleFonts.poppins(fontSize: 12, color: Colors.red),
+    ),
   );
-
-
 }
 
+// ─── Legacy stubs (kept so other files that import them don't break) ───────────
+Future<void> showAddItemDialog(BuildContext context, int itemId, int categoryId,
+    String categoryName, String itemName) async {
+  await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => AddItemScreen(
+        itemId: itemId,
+        categoryId: categoryId,
+        categoryName: categoryName,
+        itemName: itemName,
+      ),
+    ),
+  );
+}
 
+Future<void> showRemoveItemDialog(BuildContext context, int itemId, int categoryId,
+    String categoryName, String itemName) async {
+  await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => RemoveItemScreen(
+        itemId: itemId,
+        categoryId: categoryId,
+        categoryName: categoryName,
+        itemName: itemName,
+      ),
+    ),
+  );
+}
