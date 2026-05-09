@@ -66,37 +66,50 @@ class _AddItemScreenState extends State<AddItemScreen> {
   }
 
   void _showSnack(String msg, {bool error = true}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: GoogleFonts.poppins(fontSize: 13)),
-      backgroundColor: error ? Colors.red : Colors.green,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      margin: const EdgeInsets.all(16),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg, style: GoogleFonts.poppins(fontSize: 13)),
+        backgroundColor: error ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
   }
 
   Future<void> _submit() async {
     final qtyText = _quantityController.text.trim();
-    if (qtyText.isEmpty || int.tryParse(qtyText) == null || int.parse(qtyText) <= 0) {
-      _showSnack('Quantity must be a positive number!'); return;
+    if (qtyText.isEmpty ||
+        int.tryParse(qtyText) == null ||
+        int.parse(qtyText) <= 0) {
+      _showSnack('Quantity must be a positive number!');
+      return;
     }
-    if (_selectedType == null) { _showSnack('Please select a Type!'); return; }
+    if (_selectedType == null) {
+      _showSnack('Please select a Type!');
+      return;
+    }
     if (_selectedGodown == null || _selectedGodown!.trim().isEmpty) {
-      _showSnack('Please select a Godown!'); return;
+      _showSnack('Please select a Godown!');
+      return;
     }
     if (_selectedType == 'Seva') {
-      if (_sevakNameController.text.trim().isEmpty || _sevakNoController.text.trim().isEmpty) {
-        _showSnack('Sevak Name and Number are required for Seva!'); return;
+      if (_sevakNameController.text.trim().isEmpty ||
+          _sevakNoController.text.trim().isEmpty) {
+        _showSnack('Sevak Name and Number are required for Seva!');
+        return;
       }
       if (!RegExp(r'^\d{10}$').hasMatch(_sevakNoController.text.trim())) {
-        _showSnack('Sevak No must be exactly 10 digits!'); return;
+        _showSnack('Sevak No must be exactly 10 digits!');
+        return;
       }
     }
 
     setState(() => _submitting = true);
     try {
       String? username = await Preferences.getUserName();
-      if (username == null || username.isEmpty) throw Exception('Username not available.');
+      if (username == null || username.isEmpty)
+        throw Exception('Username not available.');
 
       final body = {
         'table': 'manage',
@@ -110,9 +123,11 @@ class _AddItemScreenState extends State<AddItemScreen> {
         'expiryDate': _expiryController.text.trim(),
         'createdBy': 1,
       };
+      const url = 'http://27.116.52.24:8060/manageItem';
+      Api.logApiHit('POST', url, source: 'AddItemDialog');
 
       final response = await http.post(
-        Uri.parse('http://27.116.52.24:8060/manageItem'),
+        Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
@@ -157,10 +172,21 @@ class _AddItemScreenState extends State<AddItemScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Add Item',
-                style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w700, color: _kTextPrimary)),
-            Text(widget.categoryName,
-                style: GoogleFonts.poppins(fontSize: 11.5, color: _kTextSecondary)),
+            Text(
+              'Add Item',
+              style: GoogleFonts.poppins(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: _kTextPrimary,
+              ),
+            ),
+            Text(
+              widget.categoryName,
+              style: GoogleFonts.poppins(
+                fontSize: 11.5,
+                color: _kTextSecondary,
+              ),
+            ),
           ],
         ),
       ),
@@ -174,97 +200,126 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 children: [
                   _ItemInfoBanner(itemName: widget.itemName),
                   const SizedBox(height: 14),
-                  _SectionCard(children: [
-                    _FormField(label: 'Item Name', child: _readonlyField(widget.itemName)),
-                    const SizedBox(height: 12),
-                    _FormField(
-                      label: 'Quantity',
-                      child: _inputField(
-                        controller: _quantityController,
-                        hint: 'Enter quantity',
-                        inputType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  _SectionCard(
+                    children: [
+                      _FormField(
+                        label: 'Item Name',
+                        child: _readonlyField(widget.itemName),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    _FormField(
-                      label: 'Expiry Date',
-                      child: GestureDetector(
-                        onTap: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: DateTime.now(),
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2101),
-                            builder: (ctx, child) => Theme(
-                              data: Theme.of(ctx).copyWith(
-                                colorScheme: const ColorScheme.light(primary: _kOrange),
+                      const SizedBox(height: 12),
+                      _FormField(
+                        label: 'Quantity',
+                        child: _inputField(
+                          controller: _quantityController,
+                          hint: 'Enter quantity',
+                          inputType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _FormField(
+                        label: 'Expiry Date',
+                        child: GestureDetector(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime.now(),
+                              lastDate: DateTime(2101),
+                              builder: (ctx, child) => Theme(
+                                data: Theme.of(ctx).copyWith(
+                                  colorScheme: const ColorScheme.light(
+                                    primary: _kOrange,
+                                  ),
+                                ),
+                                child: child!,
                               ),
-                              child: child!,
+                            );
+                            if (picked != null) {
+                              setState(
+                                () => _expiryController.text = picked
+                                    .toLocal()
+                                    .toString()
+                                    .split(' ')[0],
+                              );
+                            }
+                          },
+                          child: AbsorbPointer(
+                            child: _inputField(
+                              controller: _expiryController,
+                              hint: 'Select date',
+                              suffixIcon: const Icon(
+                                Icons.calendar_today_rounded,
+                                size: 16,
+                                color: _kTextSecondary,
+                              ),
                             ),
-                          );
-                          if (picked != null) {
-                            setState(() => _expiryController.text = picked.toLocal().toString().split(' ')[0]);
-                          }
-                        },
-                        child: AbsorbPointer(
-                          child: _inputField(
-                            controller: _expiryController,
-                            hint: 'Select date',
-                            suffixIcon: const Icon(Icons.calendar_today_rounded, size: 16, color: _kTextSecondary),
                           ),
                         ),
                       ),
-                    ),
-                  ]),
+                    ],
+                  ),
                   const SizedBox(height: 12),
-                  _SectionCard(children: [
-                    _FormField(
-                      label: 'Type',
-                      child: _dropdownField(
-                        hint: 'Select type',
-                        value: _selectedType,
-                        items: const ['Purchase', 'Seva'],
-                        onChanged: (v) => setState(() {
-                          _selectedType = v;
-                          _showSevakFields = v == 'Seva';
-                        }),
-                      ),
-                    ),
-                    if (_showSevakFields) ...[
-                      const SizedBox(height: 12),
+                  _SectionCard(
+                    children: [
                       _FormField(
-                        label: 'Sevak Name',
-                        child: _inputField(controller: _sevakNameController, hint: 'Enter sevak name'),
-                      ),
-                      const SizedBox(height: 12),
-                      _FormField(
-                        label: 'Sevak No',
-                        child: _inputField(
-                          controller: _sevakNoController,
-                          hint: '10-digit mobile number',
-                          inputType: TextInputType.phone,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
+                        label: 'Type',
+                        child: _dropdownField(
+                          hint: 'Select type',
+                          value: _selectedType,
+                          items: const ['Purchase', 'Seva'],
+                          onChanged: (v) => setState(() {
+                            _selectedType = v;
+                            _showSevakFields = v == 'Seva';
+                          }),
                         ),
                       ),
+                      if (_showSevakFields) ...[
+                        const SizedBox(height: 12),
+                        _FormField(
+                          label: 'Sevak Name',
+                          child: _inputField(
+                            controller: _sevakNameController,
+                            hint: 'Enter sevak name',
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _FormField(
+                          label: 'Sevak No',
+                          child: _inputField(
+                            controller: _sevakNoController,
+                            hint: '10-digit mobile number',
+                            inputType: TextInputType.phone,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(10),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
-                  ]),
+                  ),
                   const SizedBox(height: 12),
-                  _SectionCard(children: [
-                    _FormField(
-                      label: 'Godown',
-                      child: _loadingGodowns
-                          ? const _GodownLoader()
-                          : _godownOptions.isEmpty
-                              ? _noGodownText()
-                              : _dropdownField(
-                                  hint: 'Select godown',
-                                  value: _selectedGodown,
-                                  items: _godownOptions,
-                                  onChanged: (v) => setState(() => _selectedGodown = v),
-                                ),
-                    ),
-                  ]),
+                  _SectionCard(
+                    children: [
+                      _FormField(
+                        label: 'Godown',
+                        child: _loadingGodowns
+                            ? const _GodownLoader()
+                            : _godownOptions.isEmpty
+                            ? _noGodownText()
+                            : _dropdownField(
+                                hint: 'Select godown',
+                                value: _selectedGodown,
+                                items: _godownOptions,
+                                onChanged: (v) =>
+                                    setState(() => _selectedGodown = v),
+                              ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 80),
                 ],
               ),
@@ -331,37 +386,50 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
   }
 
   void _showSnack(String msg, {bool error = true}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: GoogleFonts.poppins(fontSize: 13)),
-      backgroundColor: error ? Colors.red : Colors.green,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      margin: const EdgeInsets.all(16),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg, style: GoogleFonts.poppins(fontSize: 13)),
+        backgroundColor: error ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
   }
 
   Future<void> _submit() async {
     final qtyText = _quantityController.text.trim();
-    if (qtyText.isEmpty || int.tryParse(qtyText) == null || int.parse(qtyText) <= 0) {
-      _showSnack('Quantity must be a positive number!'); return;
+    if (qtyText.isEmpty ||
+        int.tryParse(qtyText) == null ||
+        int.parse(qtyText) <= 0) {
+      _showSnack('Quantity must be a positive number!');
+      return;
     }
-    if (_selectedType == null) { _showSnack('Please select a Type!'); return; }
+    if (_selectedType == null) {
+      _showSnack('Please select a Type!');
+      return;
+    }
     if (_selectedGodown == null || _selectedGodown!.trim().isEmpty) {
-      _showSnack('Please select a Godown!'); return;
+      _showSnack('Please select a Godown!');
+      return;
     }
     if (_selectedType == 'Seva') {
-      if (_sevakNameController.text.trim().isEmpty || _sevakNoController.text.trim().isEmpty) {
-        _showSnack('Sevak Name and Number are required for Seva!'); return;
+      if (_sevakNameController.text.trim().isEmpty ||
+          _sevakNoController.text.trim().isEmpty) {
+        _showSnack('Sevak Name and Number are required for Seva!');
+        return;
       }
       if (!RegExp(r'^\d{10}$').hasMatch(_sevakNoController.text.trim())) {
-        _showSnack('Sevak No must be exactly 10 digits!'); return;
+        _showSnack('Sevak No must be exactly 10 digits!');
+        return;
       }
     }
 
     setState(() => _submitting = true);
     try {
       String? username = await Preferences.getUserName();
-      if (username == null || username.isEmpty) throw Exception('Username not available.');
+      if (username == null || username.isEmpty)
+        throw Exception('Username not available.');
 
       final body = {
         'table': 'manage',
@@ -374,9 +442,11 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
         'itemTo': 'Remove',
         'createdBy': 1,
       };
+      const url = 'http://27.116.52.24:8060/manageItem';
+      Api.logApiHit('POST', url, source: 'RemoveItemDialog');
 
       final response = await http.post(
-        Uri.parse('http://27.116.52.24:8060/manageItem'),
+        Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
@@ -420,10 +490,21 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Use Item',
-                style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w700, color: _kTextPrimary)),
-            Text(widget.categoryName,
-                style: GoogleFonts.poppins(fontSize: 11.5, color: _kTextSecondary)),
+            Text(
+              'Use Item',
+              style: GoogleFonts.poppins(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: _kTextPrimary,
+              ),
+            ),
+            Text(
+              widget.categoryName,
+              style: GoogleFonts.poppins(
+                fontSize: 11.5,
+                color: _kTextSecondary,
+              ),
+            ),
           ],
         ),
       ),
@@ -434,67 +515,82 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
           children: [
             _ItemInfoBanner(itemName: widget.itemName, isRemove: true),
             const SizedBox(height: 14),
-            _SectionCard(children: [
-              _FormField(label: 'Item Name', child: _readonlyField(widget.itemName)),
-              const SizedBox(height: 12),
-              _FormField(
-                label: 'Quantity',
-                child: _inputField(
-                  controller: _quantityController,
-                  hint: 'Enter quantity',
-                  inputType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                ),
-              ),
-            ]),
-            const SizedBox(height: 12),
-            _SectionCard(children: [
-              _FormField(
-                label: 'Type',
-                child: _dropdownField(
-                  hint: 'Select type',
-                  value: _selectedType,
-                  items: const ['Purchase', 'Seva'],
-                  onChanged: (v) => setState(() {
-                    _selectedType = v;
-                    _showSevakFields = v == 'Seva';
-                  }),
-                ),
-              ),
-              if (_showSevakFields) ...[
-                const SizedBox(height: 12),
+            _SectionCard(
+              children: [
                 _FormField(
-                  label: 'Sevak Name',
-                  child: _inputField(controller: _sevakNameController, hint: 'Enter sevak name'),
+                  label: 'Item Name',
+                  child: _readonlyField(widget.itemName),
                 ),
                 const SizedBox(height: 12),
                 _FormField(
-                  label: 'Sevak No',
+                  label: 'Quantity',
                   child: _inputField(
-                    controller: _sevakNoController,
-                    hint: '10-digit mobile number',
-                    inputType: TextInputType.phone,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
+                    controller: _quantityController,
+                    hint: 'Enter quantity',
+                    inputType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   ),
                 ),
               ],
-            ]),
+            ),
             const SizedBox(height: 12),
-            _SectionCard(children: [
-              _FormField(
-                label: 'Godown',
-                child: _loadingGodowns
-                    ? const _GodownLoader()
-                    : _godownOptions.isEmpty
-                        ? _noGodownText()
-                        : _dropdownField(
-                            hint: 'Select godown',
-                            value: _selectedGodown,
-                            items: _godownOptions,
-                            onChanged: (v) => setState(() => _selectedGodown = v),
-                          ),
-              ),
-            ]),
+            _SectionCard(
+              children: [
+                _FormField(
+                  label: 'Type',
+                  child: _dropdownField(
+                    hint: 'Select type',
+                    value: _selectedType,
+                    items: const ['Purchase', 'Seva'],
+                    onChanged: (v) => setState(() {
+                      _selectedType = v;
+                      _showSevakFields = v == 'Seva';
+                    }),
+                  ),
+                ),
+                if (_showSevakFields) ...[
+                  const SizedBox(height: 12),
+                  _FormField(
+                    label: 'Sevak Name',
+                    child: _inputField(
+                      controller: _sevakNameController,
+                      hint: 'Enter sevak name',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _FormField(
+                    label: 'Sevak No',
+                    child: _inputField(
+                      controller: _sevakNoController,
+                      hint: '10-digit mobile number',
+                      inputType: TextInputType.phone,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(10),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 12),
+            _SectionCard(
+              children: [
+                _FormField(
+                  label: 'Godown',
+                  child: _loadingGodowns
+                      ? const _GodownLoader()
+                      : _godownOptions.isEmpty
+                      ? _noGodownText()
+                      : _dropdownField(
+                          hint: 'Select godown',
+                          value: _selectedGodown,
+                          items: _godownOptions,
+                          onChanged: (v) => setState(() => _selectedGodown = v),
+                        ),
+                ),
+              ],
+            ),
             const SizedBox(height: 80),
           ],
         ),
@@ -530,11 +626,15 @@ class _ItemInfoBanner extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: isRemove ? const Color(0xFFFFCDD2) : const Color(0xFFFFD8C8),
+              color: isRemove
+                  ? const Color(0xFFFFCDD2)
+                  : const Color(0xFFFFD8C8),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
-              isRemove ? Icons.remove_circle_outline_rounded : Icons.add_circle_outline_rounded,
+              isRemove
+                  ? Icons.remove_circle_outline_rounded
+                  : Icons.add_circle_outline_rounded,
               color: isRemove ? const Color(0xFFE53935) : _kOrange,
               size: 18,
             ),
@@ -590,12 +690,14 @@ class _FormField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: _kTextSecondary,
-            )),
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: _kTextSecondary,
+          ),
+        ),
         const SizedBox(height: 6),
         child,
       ],
@@ -630,13 +732,23 @@ class _BottomBar extends StatelessWidget {
   final Color color;
   final bool submitting;
   final VoidCallback onTap;
-  const _BottomBar({required this.label, required this.color, required this.submitting, required this.onTap});
+  const _BottomBar({
+    required this.label,
+    required this.color,
+    required this.submitting,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       color: Colors.white,
-      padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        12,
+        16,
+        MediaQuery.of(context).padding.bottom + 12,
+      ),
       child: SizedBox(
         width: double.infinity,
         height: 50,
@@ -647,15 +759,26 @@ class _BottomBar extends StatelessWidget {
             foregroundColor: Colors.white,
             disabledBackgroundColor: color.withOpacity(0.5),
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(13),
+            ),
           ),
           child: submitting
               ? const SizedBox(
-                  width: 22, height: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: Colors.white,
+                  ),
                 )
-              : Text(label,
-                  style: GoogleFonts.poppins(fontSize: 14.5, fontWeight: FontWeight.w700)),
+              : Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
         ),
       ),
     );
@@ -673,8 +796,14 @@ Widget _readonlyField(String value) {
       borderRadius: BorderRadius.circular(10),
       border: Border.all(color: const Color(0xFFFFD8C8)),
     ),
-    child: Text(value,
-        style: GoogleFonts.poppins(fontSize: 13.5, color: _kTextPrimary, fontWeight: FontWeight.w500)),
+    child: Text(
+      value,
+      style: GoogleFonts.poppins(
+        fontSize: 13.5,
+        color: _kTextPrimary,
+        fontWeight: FontWeight.w500,
+      ),
+    ),
   );
 }
 
@@ -717,10 +846,18 @@ Widget _dropdownField({
 }) {
   return DropdownButtonFormField<String>(
     value: value,
-    hint: Text(hint, style: GoogleFonts.poppins(fontSize: 13, color: _kTextSecondary)),
+    hint: Text(
+      hint,
+      style: GoogleFonts.poppins(fontSize: 13, color: _kTextSecondary),
+    ),
     onChanged: onChanged,
     items: items
-        .map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 13.5))))
+        .map(
+          (e) => DropdownMenuItem(
+            value: e,
+            child: Text(e, style: GoogleFonts.poppins(fontSize: 13.5)),
+          ),
+        )
         .toList(),
     decoration: InputDecoration(
       filled: true,
@@ -753,8 +890,13 @@ Widget _noGodownText() {
 }
 
 // ─── Legacy stubs (kept so other files that import them don't break) ───────────
-Future<void> showAddItemDialog(BuildContext context, int itemId, int categoryId,
-    String categoryName, String itemName) async {
+Future<void> showAddItemDialog(
+  BuildContext context,
+  int itemId,
+  int categoryId,
+  String categoryName,
+  String itemName,
+) async {
   await Navigator.push(
     context,
     MaterialPageRoute(
@@ -768,8 +910,13 @@ Future<void> showAddItemDialog(BuildContext context, int itemId, int categoryId,
   );
 }
 
-Future<void> showRemoveItemDialog(BuildContext context, int itemId, int categoryId,
-    String categoryName, String itemName) async {
+Future<void> showRemoveItemDialog(
+  BuildContext context,
+  int itemId,
+  int categoryId,
+  String categoryName,
+  String itemName,
+) async {
   await Navigator.push(
     context,
     MaterialPageRoute(

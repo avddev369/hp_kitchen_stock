@@ -6,54 +6,62 @@ import 'package:http/http.dart' as http;
 import 'package:klitchen_stock/helper/preferences.dart';
 import 'package:klitchen_stock/utils/api_urls.dart';
 import 'dart:developer' as log;
+
 class Api {
   static Dio? client;
+
+  static void logApiHit(String method, String url, {String? source}) {
+    final tag = source == null ? '' : ' [$source]';
+    print('API HIT$tag: $method $url');
+  }
 
   // Initialize Dio client
   static Future<void> clientInstance() async {
     if (client == null) {
       client = Dio();
 
-      client!.interceptors.add(InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          if (!options.path.contains('http')) {
-            options.path = Urls.mainDomain + options.path;
-          }
+      client!.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) async {
+            if (!options.path.contains('http')) {
+              options.path = Urls.mainDomain + options.path;
+            }
 
-          // Attach Authorization token to headers if it exists
-          String? token = await Preferences.getToken();
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
+            // Attach Authorization token to headers if it exists
+            String? token = await Preferences.getToken();
+            if (token != null && token.isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
 
-          return handler.next(options);
-        },
-        onError: (DioError error, handler) async {
-          if ((error.response?.statusCode == 401 &&
-              error.response?.data['message'] == "Invalid JWT")) {
-            // Handle JWT expiration or invalid token logic here if needed
-            // For example, trigger a refresh token request or logout the user
-            // You can call Preferences.removeToken() to log the user out
-          }
-          return handler.next(error);
-        },
-      ));
+            return handler.next(options);
+          },
+          onError: (DioError error, handler) async {
+            if ((error.response?.statusCode == 401 &&
+                error.response?.data['message'] == "Invalid JWT")) {
+              // Handle JWT expiration or invalid token logic here if needed
+              // For example, trigger a refresh token request or logout the user
+              // You can call Preferences.removeToken() to log the user out
+            }
+            return handler.next(error);
+          },
+        ),
+      );
     }
   }
 
   // Login API method
   static Future<Map<String, dynamic>> login(
-      String username, String password, BuildContext context) async {
+    String username,
+    String password,
+    BuildContext context,
+  ) async {
     try {
       final Uri url = Uri.parse('http://27.116.52.24:8060/login');
 
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'mobile': username,
-          'password': password,
-        }),
+        body: jsonEncode({'mobile': username, 'password': password}),
       );
 
       print("Response Status Code: ${response.statusCode}");
@@ -74,16 +82,19 @@ class Api {
 
             return {
               'success': true,
-              'data': {
-                'token': token,
-                'name': name,
-              },
+              'data': {'token': token, 'name': name},
             };
           } else {
-            return {'success': false, 'msg': 'Login failed: No token received.'};
+            return {
+              'success': false,
+              'msg': 'Login failed: No token received.',
+            };
           }
         } else {
-          return {'success': false, 'msg': responseData['msg'] ?? 'Unknown error'};
+          return {
+            'success': false,
+            'msg': responseData['msg'] ?? 'Unknown error',
+          };
         }
       } else {
         return {'success': false, 'msg': 'Server error. Please try again.'};
@@ -93,7 +104,6 @@ class Api {
       return {'success': false, 'msg': 'Error during login: $error'};
     }
   }
-
 
   static Future<Map<String, dynamic>> getItems() async {
     try {
@@ -115,15 +125,14 @@ class Api {
 
         // If the "errorStatus" is false, return the data
         if (responseData['errorStatus'] == false) {
-          return {
-            'errorStatus': false,
-            'data': responseData['data'],
-          };
+          return {'errorStatus': false, 'data': responseData['data']};
         } else {
           throw Exception('Error occurred: ${responseData['message']}');
         }
       } else {
-        throw Exception('Failed to load items. Status code: ${response.statusCode}');
+        throw Exception(
+          'Failed to load items. Status code: ${response.statusCode}',
+        );
       }
     } catch (error) {
       throw Exception('Error occurred during request: $error');
@@ -131,18 +140,16 @@ class Api {
   }
   // Additional methods for other API calls can go here
 
-
   static Future<Map<String, dynamic>> getFilteredItems(int categoryId) async {
     try {
+      const url = 'http://27.116.52.24:8060/getData';
+      logApiHit('POST', url, source: 'FilteredItemsScreen');
       var requestBody = {
         "table": "item",
-        "filters": {"categoryId": categoryId}
+        "filters": {"categoryId": categoryId},
       };
 
-      final response = await client!.post(
-        'http://27.116.52.24:8060/getData',
-        data: requestBody,
-      );
+      final response = await client!.post(url, data: requestBody);
 
       print('Filtered Items Response Data: ${response.data}');
 
@@ -151,15 +158,14 @@ class Api {
         log.log('Filtered Items Data: ${responseData['data']}');
 
         if (responseData['errorStatus'] == false) {
-          return {
-            'errorStatus': false,
-            'data': responseData['data'],
-          };
+          return {'errorStatus': false, 'data': responseData['data']};
         } else {
           throw Exception('Error: ${responseData['message']}');
         }
       } else {
-        throw Exception('Failed to load filtered items. Status code: ${response.statusCode}');
+        throw Exception(
+          'Failed to load filtered items. Status code: ${response.statusCode}',
+        );
       }
     } catch (error) {
       print('Error during getFilteredItems: $error');
@@ -169,40 +175,56 @@ class Api {
 
   static Future<List<String>> getGodownNames() async {
     try {
-      final response = await client!.post(
-        'http://27.116.52.24:8060/getData',
-        data: {
-          "table": "location",
-        },
-      );
+      const url = 'http://27.116.52.24:8060/getData';
+      logApiHit('POST', url, source: 'GodownDropdown');
+      final response = await client!.post(url, data: {"table": "location"});
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = response.data;
+        print('Godown raw response: ${response.data}');
 
-        if (responseData['errorStatus'] == false && responseData['data'] is List) {
-          return (responseData['data'] as List)
-              .map((item) => (item['godown_name'] ?? '').toString().trim())
+        if (responseData['errorStatus'] == false &&
+            responseData['data'] is List) {
+          final godowns = (responseData['data'] as List)
+              .map((item) {
+                if (item is! Map) return '';
+                final map = Map<String, dynamic>.from(item);
+                return (map['godown_name'] ??
+                        map['godownName'] ??
+                        map['location'] ??
+                        map['location_name'] ??
+                        map['locationName'] ??
+                        map['name'] ??
+                        map['engName'] ??
+                        '')
+                    .toString()
+                    .trim();
+              })
               .where((name) => name.isNotEmpty)
               .toSet()
-              .toList()
-            ..sort();
+              .toList();
+          godowns.sort();
+          print('Godown parsed list: $godowns');
+          return godowns;
         } else {
           throw Exception('Error: ${responseData['message']}');
         }
       } else {
         throw Exception(
-            'Failed to load godowns. Status code: ${response.statusCode}');
+          'Failed to load godowns. Status code: ${response.statusCode}',
+        );
       }
     } catch (error) {
       throw Exception('Error occurred during godown fetch: $error');
     }
   }
 
-
   static Future<Map<String, dynamic>> getItemDetails(int itemId) async {
     try {
+      const url = 'http://27.116.52.24:8060/getManageItemsByItemId';
+      logApiHit('POST', url, source: 'ItemDetailScreen');
       final response = await http.post(
-        Uri.parse('http://27.116.52.24:8060/getManageItemsByItemId'),
+        Uri.parse(url),
         body: json.encode({"itemId": itemId}),
         headers: {'Content-Type': 'application/json'},
       );
@@ -237,7 +259,6 @@ class Api {
         print(data['items']);
 
         return data['items'] ?? [];
-
       } else {
         return [];
       }
@@ -245,22 +266,31 @@ class Api {
       return [];
     }
   }
-  static Future<Map<String, dynamic>> addItem(String categoryId, String engName, String gujName, String unit, String location) async {
+
+  static Future<Map<String, dynamic>> addItem(
+    String categoryId,
+    String engName,
+    String gujName,
+    String unit,
+    String location,
+  ) async {
     String? username = await Preferences.getUserName();
 
     try {
       var requestBody = {
         "table": "item",
-        "categoryId": int.parse(categoryId),  // Ensure categoryId is an integer
+        "categoryId": int.parse(categoryId), // Ensure categoryId is an integer
         "engName": engName,
         "gujName": gujName,
         "unit": unit,
         "location": location,
-        "createdBy": username
+        "createdBy": username,
       };
 
       final response = await http.post(
-        Uri.parse('http://27.116.52.24:8060/insertData'), // API URL for adding item
+        Uri.parse(
+          'http://27.116.52.24:8060/insertData',
+        ), // API URL for adding item
         headers: {
           'Content-Type': 'application/json', // Ensure correct content type
         },
@@ -270,18 +300,19 @@ class Api {
       print("RESP INSEERT ${response}");
 
       if (response.statusCode == 200) {
-        Map<String, dynamic> responseData = json.decode(response.body); // Decode the response body
+        Map<String, dynamic> responseData = json.decode(
+          response.body,
+        ); // Decode the response body
 
         if (responseData['errorStatus'] == false) {
-          return {
-            'errorStatus': false,
-            'data': responseData['data'],
-          };
+          return {'errorStatus': false, 'data': responseData['data']};
         } else {
           throw Exception('Error occurred: ${responseData['message']}');
         }
       } else {
-        throw Exception('Failed to add item. Status code: ${response.statusCode}');
+        throw Exception(
+          'Failed to add item. Status code: ${response.statusCode}',
+        );
       }
     } catch (error) {
       throw Exception('Error occurred during adding item: $error');
@@ -289,7 +320,9 @@ class Api {
   }
 
   static Future<Map<String, dynamic>> addCategory(
-      String engName, String gujName) async {
+    String engName,
+    String gujName,
+  ) async {
     String? username = await Preferences.getUserName();
 
     try {
@@ -302,9 +335,7 @@ class Api {
 
       final response = await http.post(
         Uri.parse('http://27.116.52.24:8060/insertData'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: json.encode(requestBody),
       );
 
@@ -312,26 +343,17 @@ class Api {
         Map<String, dynamic> responseData = json.decode(response.body);
 
         if (responseData['errorStatus'] == false) {
-          return {
-            'errorStatus': false,
-            'data': responseData['data'],
-          };
+          return {'errorStatus': false, 'data': responseData['data']};
         } else {
           throw Exception('Error occurred: ${responseData['message']}');
         }
       } else {
         throw Exception(
-            'Failed to add category. Status code: ${response.statusCode}');
+          'Failed to add category. Status code: ${response.statusCode}',
+        );
       }
     } catch (error) {
       throw Exception('Error occurred during adding category: $error');
     }
   }
-
 }
-
-
-
-
-
-
