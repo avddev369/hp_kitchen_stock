@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../api/api.dart'; // Import your API logic
+import '../../api/api.dart';
 import 'package:intl/intl.dart';
 
 class ItemDetailScreen extends StatefulWidget {
@@ -28,6 +28,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   static const Color kBorder = Color(0xFFEEEFF4);
   static const Color kTextPrimary = Color(0xFF1A1D23);
   static const Color kTextSecondary = Color(0xFF9599B0);
+  static const Color kTileBackground = Color(0xFFF7F8FA);
 
   late Future<Map<String, dynamic>> futureItemDetails;
   TextEditingController searchController = TextEditingController();
@@ -41,8 +42,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     super.initState();
     futureItemDetails = Api.getItemDetails(widget.itemId);
   }
-
-  getItems() async {}
 
   void _searchItems(String query) {
     setState(_applyFilters);
@@ -60,28 +59,27 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
       final matchesSearch =
           query.isEmpty ||
-          itemName.contains(query) ||
-          category.contains(query) ||
-          location.contains(query) ||
-          sevakName.contains(query) ||
-          itemTo.contains(query);
+              itemName.contains(query) ||
+              category.contains(query) ||
+              location.contains(query) ||
+              sevakName.contains(query) ||
+              itemTo.contains(query);
 
       final matchesLocation =
           selectedLocationFilter == 'All' ||
-          location == selectedLocationFilter.toLowerCase();
+              location == selectedLocationFilter.toLowerCase();
 
       return matchesSearch && matchesLocation;
     }).toList();
   }
 
   List<String> get locationFilters {
-    final locations =
-        allItems
-            .map((item) => item['location']?.toString().trim() ?? '')
-            .where((location) => location.isNotEmpty)
-            .toSet()
-            .toList()
-          ..sort();
+    final locations = allItems
+        .map((item) => item['location']?.toString().trim() ?? '')
+        .where((location) => location.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
     return ['All', ...locations];
   }
 
@@ -91,7 +89,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     super.dispose();
   }
 
-  @override
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -106,24 +103,24 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         ),
         title: isSearching
             ? TextField(
-                controller: searchController,
-                autofocus: true,
-                style: GoogleFonts.poppins(color: kTextPrimary),
-                decoration: InputDecoration(
-                  hintText: 'Search history...',
-                  hintStyle: GoogleFonts.poppins(color: kTextSecondary),
-                  border: InputBorder.none,
-                ),
-                onChanged: _searchItems,
-              )
+          controller: searchController,
+          autofocus: true,
+          style: GoogleFonts.poppins(color: kTextPrimary),
+          decoration: InputDecoration(
+            hintText: 'Search history...',
+            hintStyle: GoogleFonts.poppins(color: kTextSecondary),
+            border: InputBorder.none,
+          ),
+          onChanged: _searchItems,
+        )
             : Text(
-                widget.itemName,
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                  color: kTextPrimary,
-                ),
-              ),
+          widget.itemName,
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+            color: kTextPrimary,
+          ),
+        ),
         actions: [
           IconButton(
             icon: Icon(
@@ -170,15 +167,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             }
 
             return ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
               itemCount: filteredItems.length + 1,
               itemBuilder: (context, index) {
                 if (index == 0) {
                   return _buildSummaryCard();
                 }
-
                 final item = filteredItems[index - 1];
-                final itemTo = item['itemTo']?.toString().toLowerCase() ?? '';
+                final itemTo =
+                    item['itemTo']?.toString().toLowerCase() ?? '';
                 return _buildHistoryCard(item, itemTo);
               },
             );
@@ -190,9 +187,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
   }
 
+  // ── Summary card ────────────────────────────────────────────────────────────
   Widget _buildSummaryCard() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: kSurface,
@@ -219,7 +217,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     const SizedBox(height: 3),
                     Text(
                       searchController.text.isEmpty &&
-                              selectedLocationFilter == 'All'
+                          selectedLocationFilter == 'All'
                           ? 'View add and remove history for this item'
                           : 'Showing filtered history results',
                       style: GoogleFonts.poppins(
@@ -267,14 +265,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
+                        horizontal: 14,
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
                         color: isSelected ? kOrange : kOrangeLight,
                         borderRadius: BorderRadius.circular(999),
                         border: Border.all(
-                          color: isSelected ? kOrange : const Color(0xFFFFD8C8),
+                          color: isSelected
+                              ? kOrange
+                              : const Color(0xFFFFD8C8),
                         ),
                       ),
                       child: Text(
@@ -282,7 +282,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                         style: GoogleFonts.poppins(
                           color: isSelected ? Colors.white : kOrange,
                           fontSize: 12,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -296,17 +296,18 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
   }
 
+  // ── History card ────────────────────────────────────────────────────────────
   Widget _buildHistoryCard(dynamic item, String itemTo) {
     final isAdd = itemTo == 'add';
     final itemType = item['type']?.toString().toLowerCase() ?? '';
-    final isPurchaseType = itemType == 'purchase' || itemType == 'purchased';
-    final badgeColor = isAdd
-        ? const Color(0xFF22A45D)
-        : const Color(0xFFE05050);
+    final isPurchaseType =
+        itemType == 'purchase' || itemType == 'purchased';
+    final badgeColor =
+    isAdd ? const Color(0xFF22A45D) : const Color(0xFFE05050);
     final locationName = item['location']?.toString().trim();
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
         color: kSurface,
         borderRadius: BorderRadius.circular(20),
@@ -315,16 +316,18 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 12,
-            offset: const Offset(0, 5),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Header: item name + add/remove badge ─────────
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
                   child: Text(
@@ -336,9 +339,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(width: 10),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
+                    horizontal: 12,
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
@@ -356,38 +360,37 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 ),
               ],
             ),
+
             const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _buildHighlightBadge(
-                  icon: Icons.location_on_rounded,
-                  label: locationName != null && locationName.isNotEmpty
-                      ? locationName
-                      : 'N/A',
-                ),
-              ],
+
+            // ── Location badge ────────────────────────────────
+            _buildHighlightBadge(
+              icon: Icons.location_on_rounded,
+              label: (locationName != null && locationName.isNotEmpty)
+                  ? locationName
+                  : 'N/A',
             ),
+
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildDetailTile(
-                    'Category',
-                    item['categoryName'],
-                    Icons.category_rounded,
-                  ),
-                ),
-              ],
+            Divider(color: kBorder, height: 1, thickness: 1),
+            const SizedBox(height: 12),
+
+            // ── Category (full width) ─────────────────────────
+            _buildDetailTile(
+              'Category',
+              item['categoryName'],
+              Icons.category_rounded,
             ),
+
             const SizedBox(height: 10),
+
+            // ── Quantity | Date ───────────────────────────────
             Row(
               children: [
                 Expanded(
                   child: _buildDetailTile(
                     'Quantity',
-                    "${item['qty'] ?? ''} ${item['unit'] ?? ''}",
+                    "${item['qty'] ?? ''} ${item['unit'] ?? ''}".trim(),
                     Icons.scale_rounded,
                   ),
                 ),
@@ -401,7 +404,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 ),
               ],
             ),
+
             const SizedBox(height: 10),
+
+            // ── Item Type | Sevak Name (hidden for purchase) ──
             Row(
               children: [
                 Expanded(
@@ -423,10 +429,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 ],
               ],
             ),
-            if (!isPurchaseType) const SizedBox(height: 10),
+
+            const SizedBox(height: 10),
+
+            // ── Sevak No | Item To ────────────────────────────
             Row(
               children: [
-                if (!isPurchaseType)
+                if (!isPurchaseType) ...[
                   Expanded(
                     child: _buildDetailTile(
                       'Sevak No',
@@ -434,7 +443,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                       Icons.phone_outlined,
                     ),
                   ),
-                if (!isPurchaseType) const SizedBox(width: 10),
+                  const SizedBox(width: 10),
+                ],
                 Expanded(
                   child: _buildDetailTile(
                     'Item To',
@@ -447,13 +457,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+
+            const SizedBox(height: 14),
+
+            // ── Expiry badge (right-aligned) ──────────────────
             Align(
               alignment: Alignment.centerRight,
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+                  horizontal: 14,
+                  vertical: 7,
                 ),
                 decoration: BoxDecoration(
                   color: kOrangeLight,
@@ -475,11 +488,68 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
   }
 
-  Widget _buildHighlightBadge({required IconData icon, required String label}) {
+  // ── Detail tile ─────────────────────────────────────────────────────────────
+  Widget _buildDetailTile(
+      String label,
+      dynamic value,
+      IconData icon, {
+        Color? valueColor,
+      }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: kTileBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: kBorder),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(icon, size: 16, color: kTextSecondary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 10.5,
+                    color: kTextSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value?.toString().isNotEmpty == true
+                      ? value.toString()
+                      : '—',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: valueColor ?? kTextPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Highlight badge ─────────────────────────────────────────────────────────
+  Widget _buildHighlightBadge({
+    required IconData icon,
+    required String label,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF0EA),
+        color: kOrangeLight,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: const Color(0xFFFFD8C8)),
       ),
@@ -493,7 +563,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             style: GoogleFonts.poppins(
               color: kOrange,
               fontSize: 12,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -501,66 +571,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
   }
 
-  Widget _buildDetailTile(
-    String title,
-    dynamic value,
-    IconData icon, {
-    Color valueColor = kTextPrimary,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFAF6),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFFFEEE4)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: kOrangeLight,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 16, color: kOrange),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    color: kTextSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${value ?? 'N/A'}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: valueColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
+  // ── Expiry date formatter ───────────────────────────────────────────────────
   String _formatExpiryDate(dynamic value) {
-    if (value == null || value.toString().isEmpty) {
-      return 'N/A';
-    }
-
+    if (value == null || value.toString().isEmpty) return 'N/A';
     try {
       return DateFormat('dd-MM-yyyy').format(DateTime.parse(value.toString()));
     } catch (_) {
@@ -568,6 +581,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     }
   }
 
+  // ── Empty state ─────────────────────────────────────────────────────────────
   Widget _buildEmptyState(String message) {
     return Center(
       child: Padding(
