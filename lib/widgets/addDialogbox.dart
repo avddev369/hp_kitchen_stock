@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:klitchen_stock/ui/controllers/filterItemsController.dart';
+import 'package:klitchen_stock/ui/views/showitemsDetails.dart';
 import '../api/api.dart';
 import '../helper/preferences.dart';
 
@@ -44,11 +45,11 @@ class _AddItemScreenState extends State<AddItemScreen> {
   final _expiryController = TextEditingController();
 
   String? _selectedType;
-  String? _selectedGodown;
+  LocationOption? _selectedGodown;
   bool _showSevakFields = false;
   bool _loadingGodowns = true;
   bool _submitting = false;
-  List<String> _godownOptions = [];
+  List<LocationOption> _godownOptions = [];
 
   @override
   void initState() {
@@ -58,7 +59,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
   Future<void> _fetchGodowns() async {
     try {
-      _godownOptions = await Api.getGodownNames();
+      _godownOptions = await Api.getGodownLocations();
     } catch (_) {
       _godownOptions = [];
     }
@@ -89,7 +90,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
       _showSnack('Please select a Type!');
       return;
     }
-    if (_selectedGodown == null || _selectedGodown!.trim().isEmpty) {
+    if (_selectedGodown == null) {
       _showSnack('Please select a Godown!');
       return;
     }
@@ -107,36 +108,51 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
     setState(() => _submitting = true);
     try {
-      String? username = await Preferences.getUserName();
-      if (username == null || username.isEmpty)
-        throw Exception('Username not available.');
-
       final body = {
-        'table': 'manage',
-        'qty': int.parse(qtyText),
         'itemId': widget.itemId,
         'type': _selectedType!,
         'sevakName': _showSevakFields ? _sevakNameController.text.trim() : '',
         'sevakNo': _showSevakFields ? _sevakNoController.text.trim() : '',
-        'location': _selectedGodown,
         'itemTo': 'Add',
         'expiryDate': _expiryController.text.trim(),
         'createdBy': 1,
+        'locations': [
+          {'locationId': _selectedGodown!.id, 'qty': int.parse(qtyText)},
+        ],
       };
-      const url = 'http://27.116.52.24:8060/manageItem';
+      const url = 'http://27.116.52.24:8060/insertItemToMultipleLocations';
       Api.logApiHit('POST', url, source: 'AddItemDialog');
+      print('Add item request body: $body');
 
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
+      print('Add item response: ${response.body}');
 
       if (response.statusCode == 200) {
-        _showSnack('Item added successfully!', error: false);
-        await Future.delayed(const Duration(milliseconds: 1200));
-        await _fc.GetFilteredItems(widget.categoryId);
-        if (mounted) Navigator.pop(context);
+        final responseData = jsonDecode(response.body);
+        if (responseData['errorStatus'] == false) {
+          _showSnack('Item added successfully!', error: false);
+          await Future.delayed(const Duration(milliseconds: 1200));
+          await _fc.GetFilteredItems(widget.categoryId);
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ItemDetailScreen(
+                  itemId: widget.itemId,
+                  itemName: widget.itemName,
+                ),
+              ),
+            );
+          }
+        } else {
+          _showSnack(
+            responseData['message']?.toString() ?? 'Failed to add item',
+          );
+        }
       } else {
         _showSnack('Failed to add item: ${response.statusCode}');
       }
@@ -310,7 +326,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                             ? const _GodownLoader()
                             : _godownOptions.isEmpty
                             ? _noGodownText()
-                            : _dropdownField(
+                            : _locationDropdownField(
                                 hint: 'Select godown',
                                 value: _selectedGodown,
                                 items: _godownOptions,
@@ -360,12 +376,7 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
   final FilteredItemsController _fc = Get.find<FilteredItemsController>();
 
   final _quantityController = TextEditingController();
-  final _sevakNameController = TextEditingController();
-  final _sevakNoController = TextEditingController();
-
-  String? _selectedType;
   String? _selectedGodown;
-  bool _showSevakFields = false;
   bool _loadingGodowns = true;
   bool _submitting = false;
   List<String> _godownOptions = [];
@@ -405,24 +416,9 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
       _showSnack('Quantity must be a positive number!');
       return;
     }
-    if (_selectedType == null) {
-      _showSnack('Please select a Type!');
-      return;
-    }
     if (_selectedGodown == null || _selectedGodown!.trim().isEmpty) {
       _showSnack('Please select a Godown!');
       return;
-    }
-    if (_selectedType == 'Seva') {
-      if (_sevakNameController.text.trim().isEmpty ||
-          _sevakNoController.text.trim().isEmpty) {
-        _showSnack('Sevak Name and Number are required for Seva!');
-        return;
-      }
-      if (!RegExp(r'^\d{10}$').hasMatch(_sevakNoController.text.trim())) {
-        _showSnack('Sevak No must be exactly 10 digits!');
-        return;
-      }
     }
 
     setState(() => _submitting = true);
@@ -435,9 +431,9 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
         'table': 'manage',
         'qty': int.parse(qtyText),
         'itemId': widget.itemId,
-        'type': _selectedType!,
-        'sevakName': _showSevakFields ? _sevakNameController.text.trim() : '',
-        'sevakNo': _showSevakFields ? _sevakNoController.text.trim() : '',
+        'type': 'Used',
+        'sevakName': '',
+        'sevakNo': '',
         'location': _selectedGodown,
         'itemTo': 'Remove',
         'createdBy': 1,
@@ -469,8 +465,6 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
   @override
   void dispose() {
     _quantityController.dispose();
-    _sevakNameController.dispose();
-    _sevakNoController.dispose();
     super.dispose();
   }
 
@@ -531,46 +525,6 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _SectionCard(
-              children: [
-                _FormField(
-                  label: 'Type',
-                  child: _dropdownField(
-                    hint: 'Select type',
-                    value: _selectedType,
-                    items: const ['Purchase', 'Seva'],
-                    onChanged: (v) => setState(() {
-                      _selectedType = v;
-                      _showSevakFields = v == 'Seva';
-                    }),
-                  ),
-                ),
-                if (_showSevakFields) ...[
-                  const SizedBox(height: 12),
-                  _FormField(
-                    label: 'Sevak Name',
-                    child: _inputField(
-                      controller: _sevakNameController,
-                      hint: 'Enter sevak name',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _FormField(
-                    label: 'Sevak No',
-                    child: _inputField(
-                      controller: _sevakNoController,
-                      hint: '10-digit mobile number',
-                      inputType: TextInputType.phone,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(10),
-                      ],
-                    ),
-                  ),
-                ],
               ],
             ),
             const SizedBox(height: 12),
@@ -856,6 +810,47 @@ Widget _dropdownField({
           (e) => DropdownMenuItem(
             value: e,
             child: Text(e, style: GoogleFonts.poppins(fontSize: 13.5)),
+          ),
+        )
+        .toList(),
+    decoration: InputDecoration(
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: _kBorder),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: _kOrange, width: 1.5),
+      ),
+    ),
+    dropdownColor: Colors.white,
+    borderRadius: BorderRadius.circular(12),
+    isExpanded: true,
+    icon: const Icon(Icons.keyboard_arrow_down_rounded, color: _kTextSecondary),
+  );
+}
+
+Widget _locationDropdownField({
+  required String hint,
+  required LocationOption? value,
+  required List<LocationOption> items,
+  required ValueChanged<LocationOption?> onChanged,
+}) {
+  return DropdownButtonFormField<LocationOption>(
+    value: value,
+    hint: Text(
+      hint,
+      style: GoogleFonts.poppins(fontSize: 13, color: _kTextSecondary),
+    ),
+    onChanged: onChanged,
+    items: items
+        .map(
+          (e) => DropdownMenuItem<LocationOption>(
+            value: e,
+            child: Text(e.name, style: GoogleFonts.poppins(fontSize: 13.5)),
           ),
         )
         .toList(),

@@ -34,6 +34,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   List<dynamic> allItems = [];
   List<dynamic> filteredItems = [];
   bool isSearching = false;
+  String selectedLocationFilter = 'All';
 
   @override
   void initState() {
@@ -44,26 +45,44 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   getItems() async {}
 
   void _searchItems(String query) {
-    if (query.isEmpty) {
-      setState(() => filteredItems = allItems);
-      return;
-    }
+    setState(_applyFilters);
+  }
 
-    setState(() {
-      filteredItems = allItems.where((item) {
-        String itemName = item['itemName']?.toString().toLowerCase() ?? '';
-        String category = item['categoryName']?.toString().toLowerCase() ?? '';
-        String location = item['location']?.toString().toLowerCase() ?? '';
-        String sevakName = item['sevakName']?.toString().toLowerCase() ?? '';
-        String itemTo = item['itemTo']?.toString().toLowerCase() ?? '';
+  void _applyFilters() {
+    final query = searchController.text.toLowerCase().trim();
 
-        return itemName.contains(query.toLowerCase()) ||
-            category.contains(query.toLowerCase()) ||
-            location.contains(query.toLowerCase()) ||
-            sevakName.contains(query.toLowerCase()) ||
-            itemTo.contains(query.toLowerCase());
-      }).toList();
-    });
+    filteredItems = allItems.where((item) {
+      final itemName = item['itemName']?.toString().toLowerCase() ?? '';
+      final category = item['categoryName']?.toString().toLowerCase() ?? '';
+      final location = item['location']?.toString().toLowerCase() ?? '';
+      final sevakName = item['sevakName']?.toString().toLowerCase() ?? '';
+      final itemTo = item['itemTo']?.toString().toLowerCase() ?? '';
+
+      final matchesSearch =
+          query.isEmpty ||
+          itemName.contains(query) ||
+          category.contains(query) ||
+          location.contains(query) ||
+          sevakName.contains(query) ||
+          itemTo.contains(query);
+
+      final matchesLocation =
+          selectedLocationFilter == 'All' ||
+          location == selectedLocationFilter.toLowerCase();
+
+      return matchesSearch && matchesLocation;
+    }).toList();
+  }
+
+  List<String> get locationFilters {
+    final locations =
+        allItems
+            .map((item) => item['location']?.toString().trim() ?? '')
+            .where((location) => location.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
+    return ['All', ...locations];
   }
 
   @override
@@ -116,7 +135,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 isSearching = !isSearching;
                 if (!isSearching) {
                   searchController.clear();
-                  filteredItems = allItems;
+                  _applyFilters();
                 }
               });
             },
@@ -134,14 +153,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             return _buildEmptyState('No details available for this item');
           } else if (snapshot.hasData) {
             allItems = snapshot.data?['data'] ?? [];
-            filteredItems =
-                filteredItems.isEmpty && searchController.text.isEmpty
-                ? List.from(allItems)
-                : filteredItems;
+            if (filteredItems.isEmpty &&
+                searchController.text.isEmpty &&
+                selectedLocationFilter == 'All') {
+              filteredItems = List.from(allItems);
+            } else {
+              _applyFilters();
+            }
 
             if (filteredItems.isEmpty) {
               return _buildEmptyState(
-                searchController.text.isEmpty
+                searchController.text.isEmpty && selectedLocationFilter == 'All'
                     ? 'No details available for this item'
                     : 'No matching history found',
               );
@@ -177,46 +199,96 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: kBorder),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Item History',
-                  style: GoogleFonts.poppins(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: kTextPrimary,
-                  ),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Item History',
+                      style: GoogleFonts.poppins(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: kTextPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      searchController.text.isEmpty &&
+                              selectedLocationFilter == 'All'
+                          ? 'View add and remove history for this item'
+                          : 'Showing filtered history results',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12.5,
+                        color: kTextSecondary,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  searchController.text.isEmpty
-                      ? 'View add and remove history for this item'
-                      : 'Showing filtered history results',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12.5,
-                    color: kTextSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: kOrangeLight,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              '${filteredItems.length}',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: kOrange,
-                fontWeight: FontWeight.w700,
               ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: kOrangeLight,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  '${filteredItems.length}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: kOrange,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: locationFilters.map((location) {
+                final isSelected = selectedLocationFilter == location;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedLocationFilter = location;
+                        _applyFilters();
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected ? kOrange : kOrangeLight,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: isSelected ? kOrange : const Color(0xFFFFD8C8),
+                        ),
+                      ),
+                      child: Text(
+                        location,
+                        style: GoogleFonts.poppins(
+                          color: isSelected ? Colors.white : kOrange,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
           ),
         ],
@@ -226,9 +298,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   Widget _buildHistoryCard(dynamic item, String itemTo) {
     final isAdd = itemTo == 'add';
+    final itemType = item['type']?.toString().toLowerCase() ?? '';
+    final isPurchaseType = itemType == 'purchase' || itemType == 'purchased';
     final badgeColor = isAdd
         ? const Color(0xFF22A45D)
         : const Color(0xFFE05050);
+    final locationName = item['location']?.toString().trim();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -281,6 +356,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _buildHighlightBadge(
+                  icon: Icons.location_on_rounded,
+                  label: locationName != null && locationName.isNotEmpty
+                      ? locationName
+                      : 'N/A',
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -323,27 +411,30 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     Icons.inventory_2_outlined,
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _buildDetailTile(
-                    'Sevak Name',
-                    item['sevakName'],
-                    Icons.person_outline_rounded,
+                if (!isPurchaseType) ...[
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _buildDetailTile(
+                      'Sevak Name',
+                      item['sevakName'],
+                      Icons.person_outline_rounded,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
-            const SizedBox(height: 10),
+            if (!isPurchaseType) const SizedBox(height: 10),
             Row(
               children: [
-                Expanded(
-                  child: _buildDetailTile(
-                    'Sevak No',
-                    item['sevakNo'],
-                    Icons.phone_outlined,
+                if (!isPurchaseType)
+                  Expanded(
+                    child: _buildDetailTile(
+                      'Sevak No',
+                      item['sevakNo'],
+                      Icons.phone_outlined,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
+                if (!isPurchaseType) const SizedBox(width: 10),
                 Expanded(
                   child: _buildDetailTile(
                     'Item To',
@@ -380,6 +471,32 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHighlightBadge({required IconData icon, required String label}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF0EA),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFFFD8C8)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: kOrange),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              color: kOrange,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }

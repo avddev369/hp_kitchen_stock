@@ -7,6 +7,13 @@ import 'package:klitchen_stock/helper/preferences.dart';
 import 'package:klitchen_stock/utils/api_urls.dart';
 import 'dart:developer' as log;
 
+class LocationOption {
+  final int id;
+  final String name;
+
+  const LocationOption({required this.id, required this.name});
+}
+
 class Api {
   static Dio? client;
 
@@ -174,38 +181,62 @@ class Api {
   }
 
   static Future<List<String>> getGodownNames() async {
+    final locations = await getGodownLocations();
+    return locations.map((location) => location.name).toList();
+  }
+
+  static Future<List<LocationOption>> getGodownLocations() async {
     try {
       const url = 'http://27.116.52.24:8060/getData';
+      const requestBody = {"table": "location"};
       logApiHit('POST', url, source: 'GodownDropdown');
-      final response = await client!.post(url, data: {"table": "location"});
+      print('Godown request body: $requestBody');
+      final response = await client!.post(url, data: requestBody);
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = response.data;
-        print('Godown raw response: ${response.data}');
+        print('Godown response: ${response.data}');
 
         if (responseData['errorStatus'] == false &&
             responseData['data'] is List) {
-          final godowns = (responseData['data'] as List)
+          final locations = (responseData['data'] as List)
               .map((item) {
-                if (item is! Map) return '';
+                if (item is! Map) return null;
                 final map = Map<String, dynamic>.from(item);
-                return (map['godown_name'] ??
-                        map['godownName'] ??
-                        map['location'] ??
-                        map['location_name'] ??
-                        map['locationName'] ??
-                        map['name'] ??
-                        map['engName'] ??
-                        '')
-                    .toString()
-                    .trim();
+                final rawId =
+                    map['locationId'] ??
+                    map['location_id'] ??
+                    map['id'] ??
+                    map['godownId'] ??
+                    map['godown_id'];
+                final id = int.tryParse(rawId?.toString() ?? '');
+                final name =
+                    (map['godown_name'] ??
+                            map['godownName'] ??
+                            map['location'] ??
+                            map['location_name'] ??
+                            map['locationName'] ??
+                            map['name'] ??
+                            map['engName'] ??
+                            '')
+                        .toString()
+                        .trim();
+                if (id == null || name.isEmpty) return null;
+                return LocationOption(id: id, name: name);
               })
-              .where((name) => name.isNotEmpty)
-              .toSet()
-              .toList();
-          godowns.sort();
-          print('Godown parsed list: $godowns');
-          return godowns;
+              .whereType<LocationOption>()
+              .fold<List<LocationOption>>(<LocationOption>[], (list, item) {
+                final exists = list.any((existing) => existing.id == item.id);
+                if (!exists) {
+                  list.add(item);
+                }
+                return list;
+              });
+          locations.sort((a, b) => a.name.compareTo(b.name));
+          print(
+            'Godown parsed list: ${locations.map((e) => {'id': e.id, 'name': e.name}).toList()}',
+          );
+          return locations;
         } else {
           throw Exception('Error: ${responseData['message']}');
         }
@@ -222,18 +253,20 @@ class Api {
   static Future<Map<String, dynamic>> getItemDetails(int itemId) async {
     try {
       const url = 'http://27.116.52.24:8060/getManageItemsByItemId';
+      final body = {"itemId": itemId.toString()};
       logApiHit('POST', url, source: 'ItemDetailScreen');
+      print('Item detail request body: $body');
       final response = await http.post(
         Uri.parse(url),
-        body: json.encode({"itemId": itemId}),
+        body: json.encode(body),
         headers: {'Content-Type': 'application/json'},
       );
 
-      print('Item Details Response: ${response.body}');
+      print('Item detail response: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('Item Details Data: $data');
+        print('Item detail parsed data: $data');
         return data;
       } else {
         throw Exception('Failed to load item details');
@@ -272,7 +305,6 @@ class Api {
     String engName,
     String gujName,
     String unit,
-    String location,
   ) async {
     String? username = await Preferences.getUserName();
 
@@ -283,7 +315,6 @@ class Api {
         "engName": engName,
         "gujName": gujName,
         "unit": unit,
-        "location": location,
         "createdBy": username,
       };
 

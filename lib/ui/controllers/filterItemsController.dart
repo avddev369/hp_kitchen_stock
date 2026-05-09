@@ -24,9 +24,13 @@ class FilteredItemsController extends GetxController {
       print("API Response: $data"); // Print API response for debugging
 
       if (data["data"] is List) {
-        filteredItems.assignAll(
-          data["data"].map<FilterItem>((item) => FilterItem.fromJson(item)).toList(),
+        final List<FilterItem> items = (data["data"] as List)
+            .map<FilterItem>((item) => FilterItem.fromJson(item))
+            .toList();
+        items.sort(
+          (FilterItem a, FilterItem b) => b.createdAt.compareTo(a.createdAt),
         );
+        filteredItems.assignAll(items);
         update(); // ✅ Forces UI to refresh
       } else {
         print("Error: Expected a list but got ${data["data"].runtimeType}");
@@ -36,15 +40,14 @@ class FilteredItemsController extends GetxController {
     }
   }
 
-
-
   // Method to get total quantity for a specific itemId
   int getTotalQuantityForItemId(int itemId) {
-    return filteredItems.where((item) => item.itemId == itemId).fold(0, (sum, item) {
+    return filteredItems.where((item) => item.itemId == itemId).fold(0, (
+      sum,
+      item,
+    ) {
       int qty = int.tryParse(item.qty?.toString() ?? '0') ?? 0;
       return sum + qty;
     });
   }
-
-
 }

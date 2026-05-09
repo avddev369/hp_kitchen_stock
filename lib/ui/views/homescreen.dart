@@ -216,8 +216,8 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
                       child: SpinKitFadingCircle(color: kOrange, size: 44),
                     )
                   : _isSearching
-                      ? _buildSearchResults()
-                      : _buildDefaultItems(),
+                  ? _buildSearchResults()
+                  : _buildDefaultItems(),
             ),
           ],
         ),
@@ -852,15 +852,7 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
     TextEditingController engNameController = TextEditingController();
     TextEditingController gujNameController = TextEditingController();
 
-    String? selectedLocation;
     String? selectedUnit;
-    List<String> godownOptions = [];
-
-    try {
-      godownOptions = await Api.getGodownNames();
-    } catch (_) {
-      godownOptions = [];
-    }
 
     List<String> units = [
       "Kg",
@@ -980,50 +972,6 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
                               'Enter Gujarati name',
                             ),
                             const SizedBox(height: 14),
-                            _dialogLabel('Godown'),
-                            if (godownOptions.isNotEmpty)
-                              DropdownButtonFormField2<String>(
-                                value: selectedLocation,
-                                decoration: _dropdownDecoration(
-                                  'Select godown',
-                                ),
-                                items: godownOptions
-                                    .map(
-                                      (godown) => DropdownMenuItem(
-                                        value: godown,
-                                        child: Text(
-                                          godown,
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ),
-                                    )
-                                    .toList(),
-                                onChanged: (v) =>
-                                    setDialogState(() => selectedLocation = v),
-                                validator: (v) =>
-                                    v == null ? 'Please select a godown' : null,
-                                dropdownStyleData: DropdownStyleData(
-                                  maxHeight: 200,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              )
-                            else
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                child: Text(
-                                  'No godown found. Please add godown in location table.',
-                                  style: GoogleFonts.poppins(
-                                    color: Colors.red,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            const SizedBox(height: 14),
                             _dialogLabel('Unit'),
                             DropdownButtonFormField2<String>(
                               value: selectedUnit,
@@ -1106,7 +1054,6 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
                                       engNameController.text,
                                       gujNameController.text,
                                       selectedUnit ?? '',
-                                      selectedLocation ?? '',
                                     );
                                     if (result['errorStatus'] == false) {
                                       Navigator.pop(context);

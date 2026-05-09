@@ -35,6 +35,8 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
   static const Color kTextPrimary = Color(0xFF1A1D23);
   static const Color kTextSecondary = Color(0xFF9599B0);
   bool _isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -51,6 +53,30 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
     setState(() {
       _isLoading = false;
     });
+  }
+
+  List<FilterItem> get _visibleItems {
+    if (_searchQuery.trim().isEmpty) {
+      return _fc.filteredItems.toList();
+    }
+
+    final query = _searchQuery.toLowerCase().trim();
+    return _fc.filteredItems.where((item) {
+      final haystacks = [
+        item.engName,
+        item.gujName,
+        item.location,
+        item.unit,
+        item.qty.toString(),
+      ];
+      return haystacks.any((value) => value.toLowerCase().contains(query));
+    }).toList();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -79,87 +105,101 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
             ),
             Text(
               'Items with godown-wise stock',
-              style: GoogleFonts.poppins(
-                color: kTextSecondary,
-                fontSize: 11.5,
-              ),
+              style: GoogleFonts.poppins(color: kTextSecondary, fontSize: 11.5),
             ),
           ],
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: kOrangeLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${_visibleItems.length}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: kOrange,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
+          _buildSearchBar(),
           Expanded(
             child: _isLoading
                 ? const Center(
-              child: SpinKitFadingCircle(color: kOrange, size: 44),
-            )
-                : _fc.filteredItems.isEmpty
+                    child: SpinKitFadingCircle(color: kOrange, size: 44),
+                  )
+                : _visibleItems.isEmpty
                 ? _buildEmptyFilterState()
                 : ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              itemCount: _fc.filteredItems.length + 1,
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return _buildSummaryCard(_fc.filteredItems.length);
-                }
-                final item = _fc.filteredItems[index - 1];
-                return _buildItemCard(context, item);
-              },
-            ),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                    itemCount: _visibleItems.length,
+                    itemBuilder: (context, index) {
+                      final item = _visibleItems[index];
+                      return _buildItemCard(context, item);
+                    },
+                  ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSummaryCard(int itemCount) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: kBorder),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: kOrangeLight,
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: const Icon(Icons.inventory_2_rounded, color: kOrange, size: 16),
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (value) {
+          setState(() {
+            _searchQuery = value;
+          });
+        },
+        style: GoogleFonts.poppins(fontSize: 13.5, color: kTextPrimary),
+        decoration: InputDecoration(
+          hintText: 'Search items...',
+          hintStyle: GoogleFonts.poppins(fontSize: 13, color: kTextSecondary),
+          prefixIcon: const Icon(Icons.search_rounded, color: kTextSecondary),
+          suffixIcon: _searchController.text.isEmpty
+              ? null
+              : IconButton(
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() {
+                      _searchQuery = '';
+                    });
+                  },
+                  icon: const Icon(Icons.close_rounded, color: kTextSecondary),
+                ),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Available Items',
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: kTextPrimary,
-              ),
-            ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: kBorder),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: kOrangeLight,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              '$itemCount items',
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: kOrange,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: kOrange, width: 1.4),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -195,7 +235,9 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Items will appear here when stock is available.',
+              _searchQuery.trim().isEmpty
+                  ? 'Items will appear here when stock is available.'
+                  : 'No items matched your search.',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 12,
@@ -285,7 +327,10 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
                         ),
                       const SizedBox(height: 1),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: kOrangeLight,
                           borderRadius: BorderRadius.circular(5),

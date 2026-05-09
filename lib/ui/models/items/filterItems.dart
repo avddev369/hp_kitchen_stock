@@ -25,17 +25,29 @@ class FilterItem {
 
   /// Factory method to create an `Item` object from JSON.
   factory FilterItem.fromJson(Map<String, dynamic> json) {
+    final createdAt =
+        DateTime.tryParse(
+          (json['createdAt'] ?? json['date'] ?? '').toString(),
+        ) ??
+        DateTime.fromMillisecondsSinceEpoch(0);
+    final updatedAt =
+        DateTime.tryParse(
+          (json['updatedAt'] ?? json['createdAt'] ?? json['date'] ?? '')
+              .toString(),
+        ) ??
+        createdAt;
+
     return FilterItem(
-      itemId: json['itemId'] ,
-      engName: json['engName'] as String,
-      gujName: json['gujName'] as String,
-      qty: json['qty'] ?? 0,
+      itemId: int.tryParse(json['itemId']?.toString() ?? '') ?? 0,
+      engName: (json['engName'] ?? json['itemName'] ?? '').toString(),
+      gujName: (json['gujName'] ?? '').toString(),
+      qty: int.tryParse(json['qty']?.toString() ?? '0') ?? 0,
       location: json['location'] ?? "",
-      categoryId: json['categoryId'] ,
-      unit: json['unit'] ,
-      createdBy: json['createdBy'] ,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      categoryId: int.tryParse(json['categoryId']?.toString() ?? '') ?? 0,
+      unit: (json['unit'] ?? '').toString(),
+      createdBy: (json['createdBy'] ?? '').toString(),
+      createdAt: createdAt,
+      updatedAt: updatedAt,
     );
   }
 
