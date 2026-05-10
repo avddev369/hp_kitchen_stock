@@ -110,6 +110,11 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            onPressed: getItems,
+            icon: const Icon(Icons.refresh_rounded, color: kTextPrimary),
+            tooltip: 'Refresh items',
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: Center(
