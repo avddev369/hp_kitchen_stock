@@ -257,6 +257,15 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
   }
 
   Widget _buildItemCard(BuildContext context, FilterItem item) {
+    final allowedGodowns =
+        _fc.filteredItems
+            .where((candidate) => candidate.itemId == item.itemId)
+            .map((candidate) => candidate.location.trim())
+            .where((location) => location.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -380,6 +389,7 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
                           item.categoryId,
                           widget.categoryName ?? '',
                           item.engName,
+                          allowedGodowns,
                         );
                       },
                       isPrimary: false,

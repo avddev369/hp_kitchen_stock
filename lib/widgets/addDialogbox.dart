@@ -359,6 +359,7 @@ class RemoveItemScreen extends StatefulWidget {
   final int categoryId;
   final String categoryName;
   final String itemName;
+  final List<String>? allowedGodowns;
 
   const RemoveItemScreen({
     Key? key,
@@ -366,6 +367,7 @@ class RemoveItemScreen extends StatefulWidget {
     required this.categoryId,
     required this.categoryName,
     required this.itemName,
+    this.allowedGodowns,
   }) : super(key: key);
 
   @override
@@ -388,10 +390,23 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
   }
 
   Future<void> _fetchGodowns() async {
-    try {
-      _godownOptions = await Api.getGodownNames();
-    } catch (_) {
-      _godownOptions = [];
+    final allowedGodowns =
+        (widget.allowedGodowns ?? [])
+            .map((godown) => godown.trim())
+            .where((godown) => godown.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
+
+    if (allowedGodowns.isNotEmpty) {
+      _godownOptions = allowedGodowns;
+      _selectedGodown = allowedGodowns.first;
+    } else {
+      try {
+        _godownOptions = await Api.getGodownNames();
+      } catch (_) {
+        _godownOptions = [];
+      }
     }
     if (mounted) setState(() => _loadingGodowns = false);
   }
@@ -911,6 +926,7 @@ Future<void> showRemoveItemDialog(
   int categoryId,
   String categoryName,
   String itemName,
+  List<String>? allowedGodowns,
 ) async {
   await Navigator.push(
     context,
@@ -920,6 +936,7 @@ Future<void> showRemoveItemDialog(
         categoryId: categoryId,
         categoryName: categoryName,
         itemName: itemName,
+        allowedGodowns: allowedGodowns,
       ),
     ),
   );
