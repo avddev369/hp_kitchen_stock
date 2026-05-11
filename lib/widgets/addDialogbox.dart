@@ -446,7 +446,7 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
         'table': 'manage',
         'qty': int.parse(qtyText),
         'itemId': widget.itemId,
-        'type': 'Used',
+        // 'type': 'Used',
         'sevakName': '',
         'sevakNo': '',
         'location': _selectedGodown,
@@ -455,6 +455,8 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
       };
       const url = 'http://27.116.52.24:8060/manageItem';
       Api.logApiHit('POST', url, source: 'RemoveItemDialog');
+
+      print("Bodyyyyy----${jsonEncode(body)}");
 
       final response = await http.post(
         Uri.parse(url),
