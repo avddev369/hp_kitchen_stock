@@ -378,10 +378,10 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
   final FilteredItemsController _fc = Get.find<FilteredItemsController>();
 
   final _quantityController = TextEditingController();
-  String? _selectedGodown;
+  LocationOption? _selectedGodown;
   bool _loadingGodowns = true;
   bool _submitting = false;
-  List<String> _godownOptions = [];
+  List<LocationOption> _godownOptions = [];
 
   @override
   void initState() {
@@ -398,15 +398,18 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
             .toList()
           ..sort();
 
-    if (allowedGodowns.isNotEmpty) {
-      _godownOptions = allowedGodowns;
-      _selectedGodown = allowedGodowns.first;
-    } else {
-      try {
-        _godownOptions = await Api.getGodownNames();
-      } catch (_) {
-        _godownOptions = [];
+    try {
+      final allLocations = await Api.getGodownLocations();
+      _godownOptions = allowedGodowns.isNotEmpty
+          ? allLocations
+                .where((location) => allowedGodowns.contains(location.name))
+                .toList()
+          : allLocations;
+      if (_godownOptions.isNotEmpty) {
+        _selectedGodown = _godownOptions.first;
       }
+    } catch (_) {
+      _godownOptions = [];
     }
     if (mounted) setState(() => _loadingGodowns = false);
   }
@@ -431,44 +434,48 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
       _showSnack('Quantity must be a positive number!');
       return;
     }
-    if (_selectedGodown == null || _selectedGodown!.trim().isEmpty) {
+    if (_selectedGodown == null) {
       _showSnack('Please select a Godown!');
       return;
     }
 
     setState(() => _submitting = true);
     try {
-      String? username = await Preferences.getUserName();
-      if (username == null || username.isEmpty)
-        throw Exception('Username not available.');
-
       final body = {
-        'table': 'manage',
-        'qty': int.parse(qtyText),
         'itemId': widget.itemId,
-        // 'type': 'Used',
+        'type': 'Used',
         'sevakName': '',
         'sevakNo': '',
-        'location': _selectedGodown,
         'itemTo': 'Remove',
+        // 'expiryDate': '',
         'createdBy': 1,
+        'locations': [
+          {'locationId': _selectedGodown!.id, 'qty': int.parse(qtyText)},
+        ],
       };
-      const url = 'http://27.116.52.24:8060/manageItem';
+      const url = 'http://27.116.52.24:8060/insertItemToMultipleLocations';
       Api.logApiHit('POST', url, source: 'RemoveItemDialog');
-
-      print("Bodyyyyy----${jsonEncode(body)}");
+      print('Remove item request body: $body');
 
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
+      print('Remove item response: ${response.body}');
 
       if (response.statusCode == 200) {
-        _showSnack('Item removed successfully!', error: false);
-        await Future.delayed(const Duration(milliseconds: 1200));
-        await _fc.GetFilteredItems(widget.categoryId);
-        if (mounted) Navigator.pop(context);
+        final responseData = jsonDecode(response.body);
+        if (responseData['errorStatus'] == false) {
+          _showSnack('Item removed successfully!', error: false);
+          await Future.delayed(const Duration(milliseconds: 1200));
+          await _fc.GetFilteredItems(widget.categoryId);
+          if (mounted) Navigator.pop(context);
+        } else {
+          _showSnack(
+            responseData['message']?.toString() ?? 'Failed to remove item',
+          );
+        }
       } else {
         _showSnack('Failed to remove item: ${response.statusCode}');
       }
@@ -553,7 +560,7 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
                       ? const _GodownLoader()
                       : _godownOptions.isEmpty
                       ? _noGodownText()
-                      : _dropdownField(
+                      : _locationDropdownField(
                           hint: 'Select godown',
                           value: _selectedGodown,
                           items: _godownOptions,

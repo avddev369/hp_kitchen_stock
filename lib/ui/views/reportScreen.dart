@@ -447,6 +447,10 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
               ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: kTextPrimary),
+            onPressed: () => fetchItems(forceRefresh: true),
+          ),
+          IconButton(
             icon: Icon(
               isSearching ? Icons.close_rounded : Icons.search_rounded,
               color: kTextPrimary,
@@ -494,12 +498,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                 ? _buildEmptyState()
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                    itemCount: filteredItems.length + 1,
+                    itemCount: filteredItems.length,
                     itemBuilder: (context, index) {
-                      if (index == 0) {
-                        return _buildSummaryCard();
-                      }
-                      var item = filteredItems[index - 1];
+                      var item = filteredItems[index];
                       return _buildItemCard(item);
                     },
                   ),
@@ -583,48 +584,6 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
           ),
         ],
       ],
-    );
-  }
-
-  Widget _buildSummaryCard() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: kSurface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: kBorder),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: kOrangeLight,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(
-              Icons.assessment_rounded,
-              color: kOrange,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              selectedAction == 'add'
-                  ? 'Showing added stock records'
-                  : 'Showing removed stock records',
-              style: const TextStyle(
-                fontSize: 13,
-                color: kTextSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 

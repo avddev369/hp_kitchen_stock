@@ -86,153 +86,214 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
       builder: (context, itemProvider, child) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(
-              12,
-            ), // Set AlertDialog border radius
+            borderRadius: BorderRadius.circular(20),
           ),
-          title: const Text("Filter Options"),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: 24,
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+          contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+          actionsPadding: const EdgeInsets.fromLTRB(20, 8, 20, 18),
+          title: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Filter Reports",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+              ),
+              SizedBox(height: 4),
+              Text(
+                "Choose the fields you want to use for filtering.",
+                style: TextStyle(fontSize: 13, color: Colors.black54),
+              ),
+            ],
+          ),
           content: itemProvider.isLoading
               ? const Center(child: SpinKitFadingCircle(color: Colors.orange))
               : SingleChildScrollView(
                   child: Container(
-                    width: 700,
+                    width: 760,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildHeader("Item Name"),
-                        _buildDropdown(
-                          "Item Name",
-                          itemProvider.items
-                              .map((e) => (e["itemName"] as String?) ?? "")
-                              .toSet()
-                              .toList(),
-                          selectedItemName,
-                          (value) => setState(() => selectedItemName = value),
-                        ),
-
-                        _buildHeader("Category"),
-                        _buildDropdown(
-                          "Category",
-                          itemProvider.items
-                              .map((e) => (e["categoryName"] as String?) ?? "")
-                              .toSet()
-                              .toList(),
-                          selectedCategory,
-                          (value) => setState(() => selectedCategory = value),
-                        ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildHeader("Seva Type"),
-                                  _buildDropdown(
-                                    "Seva Type",
-                                    itemProvider.items
-                                        .map(
-                                          (e) => (e["type"] as String?) ?? "",
-                                        )
-                                        .toSet()
-                                        .toList(),
-                                    selectedType,
-                                    (value) =>
-                                        setState(() => selectedType = value),
-                                  ),
-                                ],
+                        _buildSectionCard(
+                          title: "Basic Details",
+                          subtitle:
+                              "Pick the item, category, activity type, or sevak name.",
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildHeader("Item Name"),
+                              _buildDropdown(
+                                "Item Name",
+                                itemProvider.items
+                                    .map(
+                                      (e) => (e["itemName"] as String?) ?? "",
+                                    )
+                                    .toSet()
+                                    .toList(),
+                                selectedItemName,
+                                (value) =>
+                                    setState(() => selectedItemName = value),
                               ),
-                            ),
-                            const SizedBox(
-                              width: 10,
-                            ), // Space between the dropdowns
-                            Expanded(
-                              child: Column(
+                              _buildHeader("Category"),
+                              _buildDropdown(
+                                "Category",
+                                itemProvider.items
+                                    .map(
+                                      (e) =>
+                                          (e["categoryName"] as String?) ?? "",
+                                    )
+                                    .toSet()
+                                    .toList(),
+                                selectedCategory,
+                                (value) =>
+                                    setState(() => selectedCategory = value),
+                              ),
+                              Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _buildHeader("Sevak Name"),
-                                  _buildDropdown(
-                                    "Sevak Name",
-                                    itemProvider.items
-                                        .map(
-                                          (e) =>
-                                              (e["sevakName"] as String?) ?? "",
-                                        )
-                                        .toSet()
-                                        .toList(),
-                                    selectedSevakName,
-                                    (value) => setState(
-                                      () => selectedSevakName = value,
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _buildHeader("Seva Type"),
+                                        _buildDropdown(
+                                          "Seva Type",
+                                          itemProvider.items
+                                              .map(
+                                                (e) =>
+                                                    (e["type"] as String?) ??
+                                                    "",
+                                              )
+                                              .toSet()
+                                              .toList(),
+                                          selectedType,
+                                          (value) => setState(
+                                            () => selectedType = value,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _buildHeader("Sevak Name"),
+                                        _buildDropdown(
+                                          "Sevak Name",
+                                          itemProvider.items
+                                              .map(
+                                                (e) =>
+                                                    (e["sevakName"]
+                                                        as String?) ??
+                                                    "",
+                                              )
+                                              .toSet()
+                                              .toList(),
+                                          selectedSevakName,
+                                          (value) => setState(
+                                            () => selectedSevakName = value,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-
-                        _buildHeader("Expiry Date"),
-
-                        _buildDropdown(
-                          "Date Range",
-                          ["All", "Custom Range"],
-                          selectedExpiryDateRange,
-                          (value) =>
-                              setState(() => selectedExpiryDateRange = value!),
-                        ),
-
-                        if (selectedExpiryDateRange == "Custom Range") ...[
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildDateField(
-                                  label: "Start Date",
-                                  date: startExpDate,
-                                  onTap: () => _selectExpDate(context, true),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: _buildDateField(
-                                  label: "End Date",
-                                  date: endExpDate,
-                                  onTap: () => _selectExpDate(context, false),
-                                ),
-                              ),
                             ],
                           ),
-                        ],
-
-                        const SizedBox(height: 10),
-                        _buildHeader("Date Range"),
-                        _buildDropdown(
-                          "Date Range",
-                          ["All", "Custom Range"],
-                          selectedDateRange,
-                          (value) => setState(() => selectedDateRange = value!),
                         ),
-
-                        if (selectedDateRange == "Custom Range") ...[
-                          Row(
+                        const SizedBox(height: 14),
+                        _buildSectionCard(
+                          title: "Expiry Date",
+                          subtitle:
+                              "Filter only the records that match a specific expiry range.",
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: _buildDateField(
-                                  label: "Start Date",
-                                  date: startDate,
-                                  onTap: () => _selectDate(context, true),
+                              _buildHeader("Expiry Range"),
+                              _buildDropdown(
+                                "Date Range",
+                                ["All", "Custom Range"],
+                                selectedExpiryDateRange,
+                                (value) => setState(
+                                  () => selectedExpiryDateRange = value!,
                                 ),
                               ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: _buildDateField(
-                                  label: "End Date",
-                                  date: endDate,
-                                  onTap: () => _selectDate(context, false),
+                              if (selectedExpiryDateRange ==
+                                  "Custom Range") ...[
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildDateField(
+                                        label: "Start Date",
+                                        date: startExpDate,
+                                        onTap: () =>
+                                            _selectExpDate(context, true),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _buildDateField(
+                                        label: "End Date",
+                                        date: endExpDate,
+                                        onTap: () =>
+                                            _selectExpDate(context, false),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
+                              ],
                             ],
                           ),
-                        ],
+                        ),
+                        const SizedBox(height: 14),
+                        _buildSectionCard(
+                          title: "Created Date",
+                          subtitle:
+                              "Use this when you want records from a specific entry period.",
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildHeader("Created Date Range"),
+                              _buildDropdown(
+                                "Date Range",
+                                ["All", "Custom Range"],
+                                selectedDateRange,
+                                (value) =>
+                                    setState(() => selectedDateRange = value!),
+                              ),
+                              if (selectedDateRange == "Custom Range") ...[
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildDateField(
+                                        label: "Start Date",
+                                        date: startDate,
+                                        onTap: () => _selectDate(context, true),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _buildDateField(
+                                        label: "End Date",
+                                        date: endDate,
+                                        onTap: () =>
+                                            _selectDate(context, false),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -332,36 +393,39 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
     final TextEditingController searchController = TextEditingController();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.only(top: 4, bottom: 12),
       child: DropdownButtonFormField2<String>(
         decoration: InputDecoration(
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide(
               color: Colors.orange.withOpacity(0.2),
               width: 1,
             ),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide(
               color: Colors.orange.withOpacity(0.5),
               width: 1,
             ),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
             borderSide: const BorderSide(color: Colors.deepOrange, width: 2),
           ),
           contentPadding: const EdgeInsets.symmetric(
-            vertical: 12,
+            vertical: 14,
             horizontal: 16,
           ),
         ),
         isExpanded: true,
-        hint: Text(label, style: const TextStyle(color: Colors.black54)),
+        hint: Text(
+          'Select $label',
+          style: const TextStyle(color: Colors.black54, fontSize: 14),
+        ),
         value: selectedValue,
         onChanged: onChanged,
         items: items
@@ -376,16 +440,16 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
             )
             .toList(),
         dropdownStyleData: DropdownStyleData(
-          maxHeight: 300,
+          maxHeight: 320,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(14),
             color: Colors.white,
             border: Border.all(color: Colors.orange.withOpacity(0.1), width: 1),
           ),
         ),
         menuItemStyleData: const MenuItemStyleData(
-          height: 40,
-          padding: EdgeInsets.symmetric(horizontal: 4),
+          height: 46,
+          padding: EdgeInsets.symmetric(horizontal: 6),
         ),
         dropdownSearchData: isDateRangeDropdown
             ? null // Remove search field for Date Range dropdown
@@ -441,15 +505,50 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
 
   Widget _buildHeader(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 5, top: 10),
+      padding: const EdgeInsets.only(bottom: 4, top: 2),
       child: Text(
         text,
         style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'Roboto', // Using Roboto font
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
           color: Colors.black87,
         ),
+      ),
+    );
+  }
+
+  Widget _buildSectionCard({
+    required String title,
+    required String subtitle,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBF8),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.orange.withOpacity(0.18), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: const TextStyle(fontSize: 12.5, color: Colors.black54),
+          ),
+          const SizedBox(height: 10),
+          child,
+        ],
       ),
     );
   }
@@ -462,10 +561,11 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.orange),
-          borderRadius: BorderRadius.circular(8),
+          color: Colors.white,
+          border: Border.all(color: Colors.orange.withOpacity(0.5)),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
