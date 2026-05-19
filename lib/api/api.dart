@@ -64,6 +64,7 @@ class Api {
   ) async {
     try {
       final Uri url = Uri.parse('http://27.116.52.24:8060/login');
+      logApiHit('POST', url.toString(), source: 'Login');
 
       final response = await http.post(
         url,
