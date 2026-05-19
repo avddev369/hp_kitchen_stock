@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/svg.dart';
@@ -15,18 +14,21 @@ class LoginScreen extends StatefulWidget {
   final String? imagePath;
   final Color? backgroundColor;
 
-  LoginScreen({Key? key, this.imagePath, this.backgroundColor}) : super(key: key);
+  LoginScreen({Key? key, this.imagePath, this.backgroundColor})
+    : super(key: key);
 
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  static const Color kOrange = Color(0xFFFF6B35);
+  static const Color kOrangeLight = Color(0xFFFFF0EA);
+  static const Color kBackground = Color(0xFFF7F8FA);
+  static const Color kTextPrimary = Color(0xFF1A1D23);
+  static const Color kTextSecondary = Color(0xFF9599B0);
+  static const Color kBorder = Color(0xFFEEEFF4);
   final LoginController loginController = Get.put(LoginController());
-
-  Color bgColor = Colors.orange;
-  Color shapeColor = Colors.orange;
-  Color buttonColor = Colors.orange;
   File? _selectedImage;
   String? _cachedImagePath;
 
@@ -62,7 +64,11 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      var response = await Api.login(_usernameController.text, _passwordController.text, context);
+      var response = await Api.login(
+        _usernameController.text,
+        _passwordController.text,
+        context,
+      );
 
       if (response != null && response['success'] == true) {
         String token = response['data']['token'] ?? '';
@@ -105,81 +111,156 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.orange,
+      backgroundColor: kBackground,
       body: Stack(
         children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: ClipPath(
-              clipper: TopWaveClipper(),
-              child: Container(
-                height: 500,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.orange, Colors.white],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                ),
-                child: Center(
-                  child: SvgPicture.asset(
-                    'assets/logo5.svg',
-                    height: 130,
-                    fit: BoxFit.contain,
-                  ).animate().scale().fadeIn(duration: Duration(milliseconds: 500)),
-                ),
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFFFF4EE), Color(0xFFF7F8FA)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
             ),
           ),
-          Center(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SizedBox(height: 150),
-                    Container(
-                      padding: EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 10,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            'Login',
-                            style: GoogleFonts.poppins(fontSize: 25, fontWeight: FontWeight.bold, color: Colors.orange),
-                            textAlign: TextAlign.center,
-                          ).animate().fadeIn(duration: 1000.ms).slideY(),
-                          SizedBox(height: 20),
-                          _buildInputField(controller: _usernameController, label: 'User Name or E-mail', icon: Icons.person_outline),
-                          SizedBox(height: 15),
-                          _buildInputField(controller: _passwordController, label: 'Password', icon: Icons.lock_outline, obscureText: true),
-                          SizedBox(height: 20),
-                          ElevatedButton(
-                            onPressed: _isLoading ? null : _login,
-                            child: _isLoading ? SpinKitFadingCircle(color: Colors.orange) : Text('LOG IN', style: TextStyle(fontSize: 16, color: Colors.white)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                              padding: EdgeInsets.symmetric(vertical: 14),
-                              minimumSize: Size(double.infinity, 50), // Set width to full width and height to 50
-                            ),
-                          ),
-                        ],
-                      ),
+          Positioned(
+            top: -110,
+            left: -40,
+            child: Container(
+              width: 220,
+              height: 220,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: kOrange.withOpacity(0.12),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 80,
+            right: -30,
+            child: Container(
+              width: 160,
+              height: 160,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: kOrange.withOpacity(0.10),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 24,
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: kBorder),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 24,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
                     ),
-                  ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 82,
+                            height: 82,
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: kOrangeLight,
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child:
+                                SvgPicture.asset(
+                                  'assets/logo5.svg',
+                                  fit: BoxFit.contain,
+                                ).animate().scale().fadeIn(
+                                  duration: const Duration(milliseconds: 500),
+                                ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Welcome Back',
+                          style: GoogleFonts.poppins(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: kTextPrimary,
+                          ),
+                        ).animate().fadeIn(duration: 700.ms).slideY(begin: 0.2),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Login to continue managing your kitchen stock.',
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            color: kTextSecondary,
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        _buildInputField(
+                          controller: _usernameController,
+                          label: 'Phone Number or Username',
+                          icon: Icons.person_outline_rounded,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildInputField(
+                          controller: _passwordController,
+                          label: 'Password',
+                          icon: Icons.lock_outline_rounded,
+                          obscureText: true,
+                        ),
+                        const SizedBox(height: 22),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _login,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: kOrange,
+                              disabledBackgroundColor: kOrange.withOpacity(
+                                0.55,
+                              ),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: SpinKitFadingCircle(
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                  )
+                                : Text(
+                                    'LOG IN',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 15,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -189,42 +270,45 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildInputField({required TextEditingController controller, required String label, required IconData icon, bool obscureText = false}) {
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool obscureText = false,
+  }) {
     return TextField(
       controller: controller,
       obscureText: obscureText ? _obscurePassword : false,
+      style: GoogleFonts.poppins(fontSize: 14, color: kTextPrimary),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: Colors.grey),
+        labelStyle: GoogleFonts.poppins(color: kTextSecondary, fontSize: 13),
+        prefixIcon: Icon(icon, color: kTextSecondary),
         suffixIcon: obscureText
             ? IconButton(
-          icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
-          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-        )
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  color: kTextSecondary,
+                ),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
+              )
             : null,
         filled: true,
-        fillColor: Color(0xFFF5F5F5),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+        fillColor: const Color(0xFFFFFBF8),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 16,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: kBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: kOrange, width: 1.4),
+        ),
       ),
     );
   }
-}
-class TopWaveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    Path path = Path();
-    path.lineTo(0, size.height - 100);
-    path.quadraticBezierTo(
-      size.width / 2,
-      size.height,
-      size.width,
-      size.height - 100,
-    );
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
