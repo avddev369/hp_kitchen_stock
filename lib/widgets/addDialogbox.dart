@@ -7,7 +7,6 @@ import 'package:http/http.dart' as http;
 import 'package:klitchen_stock/ui/controllers/filterItemsController.dart';
 import 'package:klitchen_stock/ui/views/showitemsDetails.dart';
 import '../api/api.dart';
-import '../helper/preferences.dart';
 
 // ─── Shared colours ───────────────────────────────────────────────────────────
 const Color _kOrange = Color(0xFFFF6B35);
@@ -359,7 +358,8 @@ class RemoveItemScreen extends StatefulWidget {
   final int categoryId;
   final String categoryName;
   final String itemName;
-  final List<String>? allowedGodowns;
+  final String itemUnit;
+  final Map<String, num>? godownStock;
 
   const RemoveItemScreen({
     Key? key,
@@ -367,7 +367,8 @@ class RemoveItemScreen extends StatefulWidget {
     required this.categoryId,
     required this.categoryName,
     required this.itemName,
-    this.allowedGodowns,
+    required this.itemUnit,
+    this.godownStock,
   }) : super(key: key);
 
   @override
@@ -379,6 +380,7 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
 
   final _quantityController = TextEditingController();
   LocationOption? _selectedGodown;
+  String? _selectedUnit;
   bool _loadingGodowns = true;
   bool _submitting = false;
   List<LocationOption> _godownOptions = [];
@@ -391,7 +393,7 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
 
   Future<void> _fetchGodowns() async {
     final allowedGodowns =
-        (widget.allowedGodowns ?? [])
+        (widget.godownStock?.keys ?? const <String>[])
             .map((godown) => godown.trim())
             .where((godown) => godown.isNotEmpty)
             .toSet()
@@ -411,6 +413,7 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
     } catch (_) {
       _godownOptions = [];
     }
+    _selectedUnit = widget.itemUnit;
     if (mounted) setState(() => _loadingGodowns = false);
   }
 
@@ -428,14 +431,37 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
 
   Future<void> _submit() async {
     final qtyText = _quantityController.text.trim();
-    if (qtyText.isEmpty ||
-        int.tryParse(qtyText) == null ||
-        int.parse(qtyText) <= 0) {
+    final enteredQty = double.tryParse(qtyText);
+    if (qtyText.isEmpty || enteredQty == null || enteredQty <= 0) {
       _showSnack('Quantity must be a positive number!');
       return;
     }
     if (_selectedGodown == null) {
       _showSnack('Please select a Godown!');
+      return;
+    }
+    if (_selectedUnit == null) {
+      _showSnack('Please select a unit!');
+      return;
+    }
+
+    final stockForGodown =
+        widget.godownStock?[_selectedGodown!.name.trim()]?.toDouble() ?? 0;
+    final convertedQty = _convertQuantity(
+      quantity: enteredQty,
+      fromUnit: _selectedUnit!,
+      toUnit: widget.itemUnit,
+    );
+
+    if (convertedQty == null) {
+      _showSnack('Selected unit cannot be converted to ${widget.itemUnit}.');
+      return;
+    }
+
+    if (convertedQty > stockForGodown) {
+      _showSnack(
+        'Only ${_formatQuantity(stockForGodown)} ${widget.itemUnit} is available in ${_selectedGodown!.name}.',
+      );
       return;
     }
 
@@ -450,7 +476,10 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
         // 'expiryDate': '',
         'createdBy': 1,
         'locations': [
-          {'locationId': _selectedGodown!.id, 'qty': int.parse(qtyText)},
+          {
+            'locationId': _selectedGodown!.id,
+            'qty': _normalizeQuantity(convertedQty),
+          },
         ],
       };
       const url = 'http://27.116.52.24:8060/insertItemToMultipleLocations';
@@ -545,8 +574,22 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
                   child: _inputField(
                     controller: _quantityController,
                     hint: 'Enter quantity',
-                    inputType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    inputType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _FormField(
+                  label: 'Unit',
+                  child: _dropdownField(
+                    hint: 'Select unit',
+                    value: _selectedUnit,
+                    items: _compatibleUnitsFor(widget.itemUnit),
+                    onChanged: (v) => setState(() => _selectedUnit = v),
                   ),
                 ),
               ],
@@ -569,6 +612,19 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
                 ),
               ],
             ),
+            if (_selectedGodown != null) ...[
+              const SizedBox(height: 12),
+              _SectionCard(
+                children: [
+                  _FormField(
+                    label: 'Available Stock',
+                    child: _readonlyField(
+                      '${_formatQuantity((widget.godownStock?[_selectedGodown!.name.trim()] ?? 0).toDouble())} ${widget.itemUnit}',
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 80),
           ],
         ),
@@ -935,7 +991,8 @@ Future<void> showRemoveItemDialog(
   int categoryId,
   String categoryName,
   String itemName,
-  List<String>? allowedGodowns,
+  String itemUnit,
+  Map<String, num>? godownStock,
 ) async {
   await Navigator.push(
     context,
@@ -945,8 +1002,72 @@ Future<void> showRemoveItemDialog(
         categoryId: categoryId,
         categoryName: categoryName,
         itemName: itemName,
-        allowedGodowns: allowedGodowns,
+        itemUnit: itemUnit,
+        godownStock: godownStock,
       ),
     ),
   );
+}
+
+List<String> _compatibleUnitsFor(String unit) {
+  final normalizedUnit = unit.trim().toLowerCase();
+  const groups = [
+    ['kg', 'gm'],
+    ['ltr', 'ml'],
+  ];
+
+  for (final group in groups) {
+    if (group.contains(normalizedUnit)) {
+      return group;
+    }
+  }
+
+  return [unit];
+}
+
+double? _convertQuantity({
+  required double quantity,
+  required String fromUnit,
+  required String toUnit,
+}) {
+  final from = fromUnit.trim().toLowerCase();
+  final to = toUnit.trim().toLowerCase();
+
+  if (from == to) return quantity;
+
+  const conversionToBase = {
+    'kg': 1000.0,
+    'gm': 1.0,
+    'ltr': 1000.0,
+    'ml': 1.0,
+  };
+
+  if (!conversionToBase.containsKey(from) || !conversionToBase.containsKey(to)) {
+    return null;
+  }
+
+  final sameFamily =
+      (['kg', 'gm'].contains(from) && ['kg', 'gm'].contains(to)) ||
+      (['ltr', 'ml'].contains(from) && ['ltr', 'ml'].contains(to));
+  if (!sameFamily) return null;
+
+  final quantityInBase = quantity * conversionToBase[from]!;
+  return quantityInBase / conversionToBase[to]!;
+}
+
+dynamic _normalizeQuantity(double value) {
+  final rounded = value.roundToDouble();
+  if ((value - rounded).abs() < 0.000001) {
+    return rounded.toInt();
+  }
+  return double.parse(value.toStringAsFixed(3));
+}
+
+String _formatQuantity(num value) {
+  final asDouble = value.toDouble();
+  final rounded = asDouble.roundToDouble();
+  if ((asDouble - rounded).abs() < 0.000001) {
+    return rounded.toInt().toString();
+  }
+  return asDouble.toStringAsFixed(3).replaceFirst(RegExp(r'\.?0+$'), '');
 }

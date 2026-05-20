@@ -22,7 +22,6 @@ class Api {
     print('API HIT$tag: $method $url');
   }
 
-  // Initialize Dio client
   static Future<void> clientInstance() async {
     if (client == null) {
       client = Dio();
@@ -34,7 +33,6 @@ class Api {
               options.path = Urls.mainDomain + options.path;
             }
 
-            // Attach Authorization token to headers if it exists
             String? token = await Preferences.getToken();
             if (token != null && token.isNotEmpty) {
               options.headers['Authorization'] = 'Bearer $token';

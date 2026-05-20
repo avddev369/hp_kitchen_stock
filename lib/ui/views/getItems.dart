@@ -257,14 +257,15 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
   }
 
   Widget _buildItemCard(BuildContext context, FilterItem item) {
-    final allowedGodowns =
+    final godownStock =
         _fc.filteredItems
             .where((candidate) => candidate.itemId == item.itemId)
-            .map((candidate) => candidate.location.trim())
-            .where((location) => location.isNotEmpty)
-            .toSet()
-            .toList()
-          ..sort();
+            .where((candidate) => candidate.location.trim().isNotEmpty)
+            .fold<Map<String, num>>({}, (stock, candidate) {
+              final location = candidate.location.trim();
+              stock[location] = (stock[location] ?? 0) + candidate.qty;
+              return stock;
+            });
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -389,7 +390,8 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
                           item.categoryId,
                           widget.categoryName ?? '',
                           item.engName,
-                          allowedGodowns,
+                          item.unit,
+                          godownStock,
                         );
                       },
                       isPrimary: false,
