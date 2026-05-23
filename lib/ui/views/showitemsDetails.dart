@@ -3,6 +3,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../api/api.dart';
 import 'package:intl/intl.dart';
+import '../../utils/search_utils.dart';
 
 class ItemDetailScreen extends StatefulWidget {
   final int itemId;
@@ -48,26 +49,25 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 
   void _applyFilters() {
-    final query = searchController.text.toLowerCase().trim();
+    final query = searchController.text;
 
     filteredItems = allItems.where((item) {
-      final itemName = item['itemName']?.toString().toLowerCase() ?? '';
-      final category = item['categoryName']?.toString().toLowerCase() ?? '';
-      final location = item['location']?.toString().toLowerCase() ?? '';
-      final sevakName = item['sevakName']?.toString().toLowerCase() ?? '';
-      final itemTo = item['itemTo']?.toString().toLowerCase() ?? '';
-
-      final matchesSearch =
-          query.isEmpty ||
-              itemName.contains(query) ||
-              category.contains(query) ||
-              location.contains(query) ||
-              sevakName.contains(query) ||
-              itemTo.contains(query);
+      final matchesSearch = matchesSearchQuery(query, [
+        item['itemName']?.toString(),
+        item['itemGujName']?.toString(),
+        item['gujName']?.toString(),
+        item['categoryName']?.toString(),
+        item['categoryGujName']?.toString(),
+        item['location']?.toString(),
+        item['sevakName']?.toString(),
+        item['itemTo']?.toString(),
+        item['type']?.toString(),
+      ]);
 
       final matchesLocation =
           selectedLocationFilter == 'All' ||
-              location == selectedLocationFilter.toLowerCase();
+              normalizeSearchText(item['location']?.toString() ?? '') ==
+                  normalizeSearchText(selectedLocationFilter);
 
       return matchesSearch && matchesLocation;
     }).toList();

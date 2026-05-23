@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../itemProvider.dart';
+import '../utils/search_utils.dart';
 
 class FilterDialogueBox extends StatefulWidget {
   final Function(Map<String, dynamic>) onApplyFilter;
@@ -84,6 +85,17 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
   Widget build(BuildContext context) {
     return Consumer<ItemProvider>(
       builder: (context, itemProvider, child) {
+        final items = itemProvider.items
+            .whereType<Map<String, dynamic>>()
+            .toList();
+        final itemNameAliases = _buildAliases(items, "itemName", [
+          "itemGujName",
+          "gujName",
+        ]);
+        final categoryAliases = _buildAliases(items, "categoryName", [
+          "categoryGujName",
+        ]);
+
         return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -127,7 +139,7 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
                               _buildHeader("Item Name"),
                               _buildDropdown(
                                 "Item Name",
-                                itemProvider.items
+                                items
                                     .map(
                                       (e) => (e["itemName"] as String?) ?? "",
                                     )
@@ -136,11 +148,12 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
                                 selectedItemName,
                                 (value) =>
                                     setState(() => selectedItemName = value),
+                                itemNameAliases,
                               ),
                               _buildHeader("Category"),
                               _buildDropdown(
                                 "Category",
-                                itemProvider.items
+                                items
                                     .map(
                                       (e) =>
                                           (e["categoryName"] as String?) ?? "",
@@ -150,6 +163,7 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
                                 selectedCategory,
                                 (value) =>
                                     setState(() => selectedCategory = value),
+                                categoryAliases,
                               ),
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,7 +176,7 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
                                         _buildHeader("Seva Type"),
                                         _buildDropdown(
                                           "Seva Type",
-                                          itemProvider.items
+                                          items
                                               .map(
                                                 (e) =>
                                                     (e["type"] as String?) ??
@@ -174,6 +188,7 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
                                           (value) => setState(
                                             () => selectedType = value,
                                           ),
+                                          const {},
                                         ),
                                       ],
                                     ),
@@ -187,7 +202,7 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
                                         _buildHeader("Sevak Name"),
                                         _buildDropdown(
                                           "Sevak Name",
-                                          itemProvider.items
+                                          items
                                               .map(
                                                 (e) =>
                                                     (e["sevakName"]
@@ -200,6 +215,7 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
                                           (value) => setState(
                                             () => selectedSevakName = value,
                                           ),
+                                          const {},
                                         ),
                                       ],
                                     ),
@@ -225,6 +241,7 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
                                 (value) => setState(
                                   () => selectedExpiryDateRange = value!,
                                 ),
+                                const {},
                               ),
                               if (selectedExpiryDateRange ==
                                   "Custom Range") ...[
@@ -268,6 +285,7 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
                                 selectedDateRange,
                                 (value) =>
                                     setState(() => selectedDateRange = value!),
+                                const {},
                               ),
                               if (selectedDateRange == "Custom Range") ...[
                                 Row(
@@ -386,6 +404,7 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
     List<String> items,
     String? selectedValue,
     Function(String?) onChanged,
+    Map<String, List<String>> searchAliases,
   ) {
     final bool isDateRangeDropdown =
         label == "Date Range"; // Check if it's Date Range dropdown
@@ -494,12 +513,40 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
                   ),
                 ),
                 searchMatchFn: (item, searchValue) {
-                  return item.value.toString().toLowerCase().contains(
-                    searchValue.toLowerCase(),
-                  );
+                  final value = item.value?.toString() ?? '';
+                  return matchesSearchQuery(searchValue, [
+                    value,
+                    ...?searchAliases[value],
+                  ]);
                 },
               ),
       ),
+    );
+  }
+
+  Map<String, List<String>> _buildAliases(
+    Iterable<Map<String, dynamic>> source,
+    String primaryKey,
+    List<String> aliasKeys,
+  ) {
+    final aliases = <String, Set<String>>{};
+
+    for (final item in source) {
+      final primary = (item[primaryKey] ?? '').toString().trim();
+      if (primary.isEmpty) continue;
+
+      final bucket = aliases.putIfAbsent(primary, () => <String>{});
+      bucket.add(primary);
+      for (final key in aliasKeys) {
+        final alias = (item[key] ?? '').toString().trim();
+        if (alias.isNotEmpty) {
+          bucket.add(alias);
+        }
+      }
+    }
+
+    return aliases.map(
+      (key, value) => MapEntry(key, value.toList()),
     );
   }
 

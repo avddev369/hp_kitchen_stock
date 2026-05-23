@@ -7,6 +7,7 @@ import 'package:klitchen_stock/ui/views/reportScreen.dart'
     show ManageItemsScreen;
 import '../../api/api.dart';
 import '../../helper/preferences.dart';
+import '../../utils/search_utils.dart';
 import '../../widgets/customAlertDialog.dart';
 import 'auth/login.dart';
 import 'getItems.dart';
@@ -77,11 +78,11 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
       return;
     }
 
-    final lowerQuery = query.toLowerCase().trim();
     final results = _allCategories.where((item) {
-      final engName = (item['engName'] ?? '').toString().toLowerCase();
-      final gujName = (item['gujName'] ?? '').toString().toLowerCase();
-      return engName.contains(lowerQuery) || gujName.contains(lowerQuery);
+      return matchesSearchQuery(query, [
+        item['engName']?.toString(),
+        item['gujName']?.toString(),
+      ]);
     }).toList();
 
     setState(() {

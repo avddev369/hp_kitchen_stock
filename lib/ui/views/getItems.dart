@@ -8,6 +8,7 @@ import 'package:klitchen_stock/ui/models/items/filterItems.dart';
 import 'package:klitchen_stock/ui/views/showitemsDetails.dart'
     show ItemDetailScreen;
 import '../../widgets/addDialogbox.dart';
+import '../../utils/search_utils.dart';
 
 class FilteredItemsScreen extends StatefulWidget {
   final int categoryId;
@@ -60,16 +61,14 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
       return _fc.filteredItems.toList();
     }
 
-    final query = _searchQuery.toLowerCase().trim();
     return _fc.filteredItems.where((item) {
-      final haystacks = [
+      return matchesSearchQuery(_searchQuery, [
         item.engName,
         item.gujName,
         item.location,
         item.unit,
         item.qty.toString(),
-      ];
-      return haystacks.any((value) => value.toLowerCase().contains(query));
+      ]);
     }).toList();
   }
 

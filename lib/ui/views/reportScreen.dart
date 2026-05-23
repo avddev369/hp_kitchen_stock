@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 
 import '../../widgets/filterDialogueBox.dart';
+import '../../utils/search_utils.dart';
 
 class ManageItemsScreen extends StatefulWidget {
   const ManageItemsScreen({Key? key}) : super(key: key);
@@ -37,9 +38,22 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
     fetchItems();
   }
 
+  List<dynamic> _sortLatestFirst(List<dynamic> source) {
+    final sorted = List<dynamic>.from(source);
+    sorted.sort((a, b) {
+      final aDate = DateTime.tryParse((a["date"] ?? "").toString());
+      final bDate = DateTime.tryParse((b["date"] ?? "").toString());
+      if (aDate == null && bDate == null) return 0;
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+      return bDate.compareTo(aDate);
+    });
+    return sorted;
+  }
+
   void _filterItems() {
     setState(() {
-      filteredItems = items.where((item) {
+      filteredItems = _sortLatestFirst(items.where((item) {
         bool matchesAction =
             selectedAction == null || item["action"] == selectedAction;
         bool matchesFilter = true;
@@ -83,7 +97,7 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
         }
 
         return matchesAction && matchesFilter;
-      }).toList();
+      }).toList());
     });
   }
 
@@ -104,14 +118,14 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
         final Map<String, dynamic> jsonResponse = json.decode(response.body);
         if (!jsonResponse["errorStatus"]) {
           setState(() {
-            items = [
+            items = _sortLatestFirst([
               ...jsonResponse["data"]["add"].map(
                 (item) => {...item, "action": "add"},
               ),
               ...jsonResponse["data"]["remove"].map(
                 (item) => {...item, "action": "remove"},
               ),
-            ];
+            ]);
           });
           _filterItems(); // Apply existing filters
         }
@@ -301,7 +315,7 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
         return;
       }
 
-      filteredItems = items.where((item) {
+      filteredItems = _sortLatestFirst(items.where((item) {
         if (isNotEmpty(filter["itemName"]) &&
             item["itemName"] != filter["itemName"])
           return false;
@@ -353,7 +367,7 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
         }
 
         return true;
-      }).toList();
+      }).toList());
 
       if (filteredItems.isEmpty) {
         print("No data found for selected filters.");
@@ -429,12 +443,19 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                 style: const TextStyle(color: kTextPrimary),
                 onChanged: (query) {
                   setState(() {
-                    filteredItems = items.where((item) {
-                      return item["itemName"]?.toLowerCase().contains(
-                            query.toLowerCase(),
-                          ) ??
-                          false;
-                    }).toList();
+                    filteredItems = _sortLatestFirst(items.where((item) {
+                      return matchesSearchQuery(query, [
+                        item["itemName"]?.toString(),
+                        item["itemGujName"]?.toString(),
+                        item["gujName"]?.toString(),
+                        item["categoryName"]?.toString(),
+                        item["categoryGujName"]?.toString(),
+                        item["sevakName"]?.toString(),
+                        item["type"]?.toString(),
+                        item["location"]?.toString(),
+                        item["itemTo"]?.toString(),
+                      ]);
+                    }).toList());
                   });
                 },
               )
@@ -460,9 +481,11 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                 isSearching = !isSearching;
                 if (!isSearching) {
                   searchController.clear();
-                  filteredItems = items;
                 }
               });
+              if (!isSearching) {
+                _filterItems();
+              }
             },
           ),
           IconButton(
@@ -475,8 +498,8 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                 setState(() {
                   selectedFilters.clear();
                   isFilterApplied = false;
-                  filteredItems = items;
                 });
+                _filterItems();
               } else {
                 openFilterDialog();
               }
