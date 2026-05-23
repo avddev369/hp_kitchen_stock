@@ -394,7 +394,7 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
   Future<void> _fetchGodowns() async {
     final allowedGodowns =
         (widget.godownStock?.keys ?? const <String>[])
-            .map((godown) => godown.trim())
+            .map(_normalizeGodownKey)
             .where((godown) => godown.isNotEmpty)
             .toSet()
             .toList()
@@ -404,7 +404,10 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
       final allLocations = await Api.getGodownLocations();
       _godownOptions = allowedGodowns.isNotEmpty
           ? allLocations
-                .where((location) => allowedGodowns.contains(location.name))
+                .where(
+                  (location) =>
+                      allowedGodowns.contains(_normalizeGodownKey(location.name)),
+                )
                 .toList()
           : allLocations;
       if (_godownOptions.isNotEmpty) {
@@ -429,6 +432,11 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
     );
   }
 
+  double _stockForSelectedGodown() {
+    final godownName = _selectedGodown?.name ?? '';
+    return _stockLookup(widget.godownStock, godownName);
+  }
+
   Future<void> _submit() async {
     final qtyText = _quantityController.text.trim();
     final enteredQty = double.tryParse(qtyText);
@@ -446,7 +454,7 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
     }
 
     final stockForGodown =
-        widget.godownStock?[_selectedGodown!.name.trim()]?.toDouble() ?? 0;
+        _stockForSelectedGodown();
     final convertedQty = _convertQuantity(
       quantity: enteredQty,
       fromUnit: _selectedUnit!,
@@ -619,7 +627,7 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
                   _FormField(
                     label: 'Available Stock',
                     child: _readonlyField(
-                      '${_formatQuantity((widget.godownStock?[_selectedGodown!.name.trim()] ?? 0).toDouble())} ${widget.itemUnit}',
+                      '${_formatQuantity(_stockForSelectedGodown())} ${widget.itemUnit}',
                     ),
                   ),
                 ],
@@ -637,6 +645,15 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
       ),
     );
   }
+}
+
+double _stockLookup(Map<String, num>? godownStock, String godownName) {
+  final key = _normalizeGodownKey(godownName);
+  return godownStock?[key]?.toDouble() ?? 0;
+}
+
+String _normalizeGodownKey(String value) {
+  return value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
 }
 
 // ─── Shared Widgets ────────────────────────────────────────────────────────────

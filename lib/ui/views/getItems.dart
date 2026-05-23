@@ -262,7 +262,7 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
             .where((candidate) => candidate.itemId == item.itemId)
             .where((candidate) => candidate.location.trim().isNotEmpty)
             .fold<Map<String, num>>({}, (stock, candidate) {
-              final location = candidate.location.trim();
+              final location = _normalizeGodownKey(candidate.location);
               stock[location] = (stock[location] ?? 0) + candidate.qty;
               return stock;
             });
@@ -439,4 +439,8 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
       ),
     );
   }
+}
+
+String _normalizeGodownKey(String value) {
+  return value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
 }
