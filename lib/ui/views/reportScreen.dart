@@ -148,120 +148,6 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
     setState(() => isLoading = false);
   }
 
-  // void applyFilter(Map<String, dynamic> filter) {
-  //   setState(() {
-  //     selectedFilters = filter;
-  //     isFilterApplied = true;
-  //
-  //     bool isNotEmpty(String? value) => value?.trim().isNotEmpty ?? false;
-  //
-  //     // 🔹 Date parsing variables
-  //     DateTime? startDate;
-  //     DateTime? endDate;
-  //     DateTime? expirystartDate;
-  //     DateTime? expiryendDate;
-  //
-  //     // 🔹 Define expected input format
-  //     final dateFormat = DateFormat("yyyy-MM-dd");
-  //
-  //     try {
-  //       if (isNotEmpty(filter["startDate"])) {
-  //         startDate = dateFormat.parse(filter["startDate"]!);
-  //       }
-  //       if (isNotEmpty(filter["endDate"])) {
-  //         endDate = dateFormat.parse(filter["endDate"]!);
-  //       }
-  //       if (isNotEmpty(filter["startExpDate"])) {
-  //         expirystartDate = dateFormat.parse(filter["startExpDate"]!);
-  //       }
-  //       if (isNotEmpty(filter["endExpDate"])) {
-  //         expiryendDate = dateFormat.parse(filter["endExpDate"]!); // ✅ Corrected line
-  //       }
-  //     } catch (e) {
-  //       showError("Invalid date format. Use yyyy-MM-dd.");
-  //       return;
-  //     }
-  //
-  //     // 🔴 Validations
-  //     if (endDate != null && startDate == null) {
-  //       showError("Start date is required when selecting an end date.");
-  //       return;
-  //     }
-  //
-  //     if (startDate != null && endDate != null && endDate.isBefore(startDate)) {
-  //       showError("End date cannot be before start date.");
-  //       return;
-  //     }
-  //
-  //     if (expiryendDate != null && expirystartDate == null) {
-  //       showError("Expiry start date is required when selecting an end date.");
-  //       return;
-  //     }
-  //
-  //     if (expirystartDate != null &&
-  //         expiryendDate != null &&
-  //         expiryendDate.isBefore(expirystartDate)) {
-  //       showError("Expiry end date cannot be before start date.");
-  //       return;
-  //     }
-  //
-  //     // 🔎 Filtering logic
-  //     filteredItems = items.where((item) {
-  //       if (isNotEmpty(filter["itemName"]) &&
-  //           item["itemName"] != filter["itemName"]) return false;
-  //
-  //       if (isNotEmpty(filter["categoryName"]) &&
-  //           item["categoryName"] != filter["categoryName"]) return false;
-  //
-  //
-  //       if (isNotEmpty(filter["type"]) &&
-  //           item["type"] != filter["type"]) return false;
-  //
-  //       if (isNotEmpty(filter["sevakName"]) &&
-  //           item["sevakName"] != filter["sevakName"]) return false;
-  //
-  //       // 🔹 Check item creation date
-  //       DateTime? itemDate = DateTime.tryParse(item["date"]);
-  //       if (itemDate == null) return false;
-  //
-  //       if (startDate != null && endDate != null) {
-  //         final endOfEndDate = endDate.add(Duration(days: 1)).subtract(Duration(seconds: 1));
-  //         if (itemDate.isBefore(startDate) || itemDate.isAfter(endOfEndDate)) {
-  //           return false;
-  //         }
-  //       } else if (startDate != null) {
-  //         if (itemDate.isBefore(startDate)) return false;
-  //       }
-  //
-  //       // 🔹 Check expiry date
-  //       final expiryStr = item["expiryDate"];
-  //       if (expiryStr == null || expiryStr is! String || expiryStr.isEmpty) return false;
-  //
-  //       DateTime? itemExpDate = DateTime.tryParse(expiryStr);
-  //       if (itemExpDate == null) return false;
-  //
-  //       if (expirystartDate != null && expiryendDate != null) {
-  //         final endOfEndDate = expiryendDate.add(Duration(days: 1)).subtract(Duration(seconds: 1));
-  //         if (itemExpDate.isBefore(expirystartDate) || itemExpDate.isAfter(endOfEndDate)) {
-  //           return false;
-  //         }
-  //       } else if (expirystartDate != null) {
-  //         if (itemExpDate.isBefore(expirystartDate)) return false;
-  //       }
-  //
-  //       return true;
-  //     }).toList();
-  //
-  //     // Optional: Handle empty state
-  //     if (filteredItems.isEmpty) {
-  //       print("No data found for selected filters.");
-  //       // You can also set a flag here to display a message in UI.
-  //     }
-  //   });
-  // }
-
-  // 🔹 Function to show error in Snackbar
-
   void applyFilter(Map<String, dynamic> filter) {
     setState(() {
       selectedFilters = filter;
@@ -536,13 +422,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
   Widget _buildTopControls() {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: kSurface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: kBorder),
-          ),
+        // Header row — inline, no big card
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Row(
             children: [
               Expanded(
@@ -552,55 +434,52 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                     Text(
                       'Stock Activity',
                       style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
                         color: kTextPrimary,
                       ),
                     ),
-                    const SizedBox(height: 3),
                     Text(
                       isFilterApplied
-                          ? 'Showing filtered report results'
-                          : 'Browse add and remove history',
-                      style: TextStyle(fontSize: 12.5, color: kTextSecondary),
+                          ? 'Showing filtered results'
+                          : 'Add & remove history',
+                      style: TextStyle(fontSize: 11, color: kTextSecondary),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: kOrangeLight,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   '${filteredItems.length}',
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     color: kOrange,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
             ],
           ),
         ),
+
         if (selectedFilters.isEmpty && !isSearching) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: kSurface,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: kBorder),
             ),
             child: Row(
               children: [
                 Expanded(child: _buildRadioButton("add", "Add")),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Expanded(child: _buildRadioButton("remove", "Remove")),
               ],
             ),
@@ -609,6 +488,7 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
       ],
     );
   }
+
 
   Widget _buildRadioButton(String value, String label) {
     final isSelected = selectedAction == value;
@@ -652,138 +532,147 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
 
   Widget _buildItemCard(dynamic item) {
     String formattedExpiry = "N/A";
-    if (item["expiryDate"] != null &&
-        item["expiryDate"].toString().isNotEmpty) {
+    if (item["expiryDate"] != null && item["expiryDate"].toString().isNotEmpty) {
       try {
-        formattedExpiry = DateFormat(
-          'dd-MM-yyyy',
-        ).format(DateTime.parse(item["expiryDate"]));
-      } catch (e) {
-        formattedExpiry = "Invalid Date";
+        formattedExpiry = DateFormat('dd-MM-yyyy').format(DateTime.parse(item["expiryDate"]));
+      } catch (_) {
+        formattedExpiry = "Invalid";
       }
     }
 
+    final bool isAdd = item["action"] == "add";
+
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
+      margin: const EdgeInsets.symmetric(vertical: 5),
       decoration: BoxDecoration(
         color: kSurface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: kBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
-          ),
-        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    item["itemName"] ?? "No Name",
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: kTextPrimary,
-                    ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  item["itemName"] ?? "No Name",
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: kTextPrimary,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: item["action"] == "add"
-                        ? const Color(0xFF22A45D)
-                        : const Color(0xFFE05050),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    item["action"] == "add" ? "Add" : "Remove",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _infoText("Category", item["categoryName"]),
-                      const SizedBox(height: 10),
-                      _infoText("Category (Guj)", item["categoryGujName"]),
-                      const SizedBox(height: 10),
-                      _infoText(
-                        "Sevak Name",
-                        item["sevakName"]?.isNotEmpty == true
-                            ? item["sevakName"]
-                            : "N/A",
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _infoText("Qty", "${item["qty"]} ${item["unit"]}"),
-                      const SizedBox(height: 10),
-                      _infoText("Type", item["type"]),
-                      const SizedBox(height: 10),
-                      _infoText(
-                        "Sevak No",
-                        item["sevakNo"]?.isNotEmpty == true
-                            ? item["sevakNo"]
-                            : "N/A",
-                      ),
-                      const SizedBox(height: 10),
-                      _infoText("Date", item["date"].toString().split("T")[0]),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: Container(
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Colors.deepOrange, Colors.orange],
-                  ),
-                  borderRadius: const BorderRadius.only(
-                    bottomRight: Radius.circular(8),
-                    topLeft: Radius.circular(8),
-                  ),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
+                  color: isAdd ? const Color(0xFFD1F5E4) : const Color(0xFFFDE8E8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  "Expiry Dt : $formattedExpiry",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11.5,
+                  isAdd ? "Add" : "Remove",
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: isAdd ? const Color(0xFF0A6640) : const Color(0xFF9B1C1C),
                   ),
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Info grid — 3 columns
+          Row(
+            children: [
+              _compactCell("Category", item["categoryName"]),
+              const SizedBox(width: 5),
+              _compactCell("Qty", "${item["qty"]} ${item["unit"]}"),
+              const SizedBox(width: 5),
+              _compactCell("Type", item["type"]),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Row(
+            children: [
+              _compactCell(
+                "Sevak",
+                item["sevakName"]?.isNotEmpty == true ? item["sevakName"] : "N/A",
+              ),
+              const SizedBox(width: 5),
+              _compactCell(
+                "Sevak No",
+                item["sevakNo"]?.isNotEmpty == true ? item["sevakNo"] : "N/A",
+              ),
+              const SizedBox(width: 5),
+              _compactCell("Location", item["location"] ?? "N/A"),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Footer row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                item["date"].toString().split("T")[0],
+                style: const TextStyle(fontSize: 10, color: kTextSecondary),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF3EE),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  "Expiry: $formattedExpiry",
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFFB84A1A),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _compactCell(String label, String? value) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F8FA),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 8.5,
+                color: kTextSecondary,
+                letterSpacing: 0.3,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              value ?? "N/A",
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: kTextPrimary,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
