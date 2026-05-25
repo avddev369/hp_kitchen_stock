@@ -39,7 +39,10 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ItemProvider>(context, listen: false).fetchItems();
+      Provider.of<ItemProvider>(
+        context,
+        listen: false,
+      ).fetchItems(forceRefresh: true);
     });
   }
 

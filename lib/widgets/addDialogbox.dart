@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:klitchen_stock/ui/controllers/filterItemsController.dart';
-import 'package:klitchen_stock/ui/views/showitemsDetails.dart';
 import '../api/api.dart';
 
 // ─── Shared colours ───────────────────────────────────────────────────────────
@@ -137,15 +136,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
           await Future.delayed(const Duration(milliseconds: 1200));
           await _fc.GetFilteredItems(widget.categoryId);
           if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ItemDetailScreen(
-                  itemId: widget.itemId,
-                  itemName: widget.itemName,
-                ),
-              ),
-            );
+            Navigator.pop(context, true);
           }
         } else {
           _showSnack(
@@ -392,31 +383,19 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
   }
 
   Future<void> _fetchGodowns() async {
-    final allowedGodowns =
-        (widget.godownStock?.keys ?? const <String>[])
-            .map(_normalizeGodownKey)
-            .where((godown) => godown.isNotEmpty)
-            .toSet()
-            .toList()
-          ..sort();
-
     try {
-      final allLocations = await Api.getGodownLocations();
-      _godownOptions = allowedGodowns.isNotEmpty
-          ? allLocations
-                .where(
-                  (location) =>
-                      allowedGodowns.contains(_normalizeGodownKey(location.name)),
-                )
-                .toList()
-          : allLocations;
+      _godownOptions = await Api.getGodownLocations(itemId: widget.itemId);
       if (_godownOptions.isNotEmpty) {
         _selectedGodown = _godownOptions.first;
       }
     } catch (_) {
       _godownOptions = [];
     }
-    _selectedUnit = widget.itemUnit;
+    final compatibleUnits = _compatibleUnitsFor(widget.itemUnit);
+    _selectedUnit = compatibleUnits.firstWhere(
+      (unit) => _normalizeUnitKey(unit) == _normalizeUnitKey(widget.itemUnit),
+      orElse: () => compatibleUnits.first,
+    );
     if (mounted) setState(() => _loadingGodowns = false);
   }
 
@@ -433,7 +412,10 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
   }
 
   double _stockForSelectedGodown() {
-    final godownName = _selectedGodown?.name ?? '';
+    if (_selectedGodown == null) return 0;
+    final apiQty = _selectedGodown!.availableQty;
+    if (apiQty != null) return apiQty;
+    final godownName = _selectedGodown!.name;
     return _stockLookup(widget.godownStock, godownName);
   }
 
@@ -507,7 +489,7 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
           _showSnack('Item removed successfully!', error: false);
           await Future.delayed(const Duration(milliseconds: 1200));
           await _fc.GetFilteredItems(widget.categoryId);
-          if (mounted) Navigator.pop(context);
+          if (mounted) Navigator.pop(context, true);
         } else {
           _showSnack(
             responseData['message']?.toString() ?? 'Failed to remove item',
@@ -982,14 +964,14 @@ Widget _noGodownText() {
 }
 
 // ─── Legacy stubs (kept so other files that import them don't break) ───────────
-Future<void> showAddItemDialog(
+Future<bool?> showAddItemDialog(
   BuildContext context,
   int itemId,
   int categoryId,
   String categoryName,
   String itemName,
 ) async {
-  await Navigator.push(
+  return Navigator.push<bool>(
     context,
     MaterialPageRoute(
       builder: (_) => AddItemScreen(
@@ -1002,7 +984,7 @@ Future<void> showAddItemDialog(
   );
 }
 
-Future<void> showRemoveItemDialog(
+Future<bool?> showRemoveItemDialog(
   BuildContext context,
   int itemId,
   int categoryId,
@@ -1011,7 +993,7 @@ Future<void> showRemoveItemDialog(
   String itemUnit,
   Map<String, num>? godownStock,
 ) async {
-  await Navigator.push(
+  return Navigator.push<bool>(
     context,
     MaterialPageRoute(
       builder: (_) => RemoveItemScreen(
@@ -1087,4 +1069,8 @@ String _formatQuantity(num value) {
     return rounded.toInt().toString();
   }
   return asDouble.toStringAsFixed(3).replaceFirst(RegExp(r'\.?0+$'), '');
+}
+
+String _normalizeUnitKey(String value) {
+  return value.trim().toLowerCase();
 }

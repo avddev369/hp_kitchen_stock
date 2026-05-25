@@ -369,21 +369,24 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
                       label: 'Add',
                       icon: Icons.add_rounded,
                       onTap: () async {
-                        await showAddItemDialog(
+                        final didUpdate = await showAddItemDialog(
                           context,
                           item.itemId,
                           item.categoryId,
                           widget.categoryName ?? '',
                           item.engName,
                         );
+                        if (didUpdate == true && mounted) {
+                          await getItems();
+                        }
                       },
                     ),
                     const SizedBox(width: 6),
                     _buildActionButton(
                       label: 'Use',
                       icon: Icons.remove_rounded,
-                      onTap: () {
-                        showRemoveItemDialog(
+                      onTap: () async {
+                        final didUpdate = await showRemoveItemDialog(
                           context,
                           item.itemId,
                           item.categoryId,
@@ -392,6 +395,9 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
                           item.unit,
                           godownStock,
                         );
+                        if (didUpdate == true && mounted) {
+                          await getItems();
+                        }
                       },
                       isPrimary: false,
                     ),

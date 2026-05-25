@@ -11,9 +11,11 @@ class ItemProvider with ChangeNotifier {
 
   List<Map<String, dynamic>> get items => _items;
 
-  Future<void> fetchItems() async {
-    if (_isFetched) return; // Skip if already fetched
+  Future<void> fetchItems({bool forceRefresh = false}) async {
+    if (_isFetched && !forceRefresh) return; // Skip if already fetched
 
+    _isLoading = true;
+    notifyListeners();
     final response = await http.post(
       Uri.parse("http://27.116.52.24:8060/getManageItems"),
     );
@@ -26,8 +28,9 @@ class ItemProvider with ChangeNotifier {
           ...List<Map<String, dynamic>>.from(jsonResponse["data"]["remove"] ?? []),
         ];
         _isFetched = true;
-        notifyListeners(); // Update UI
       }
     }
+    _isLoading = false;
+    notifyListeners(); // Update UI
   }
 }

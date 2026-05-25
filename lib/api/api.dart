@@ -10,8 +10,13 @@ import 'dart:developer' as log;
 class LocationOption {
   final int id;
   final String name;
+  final double? availableQty;
 
-  const LocationOption({required this.id, required this.name});
+  const LocationOption({
+    required this.id,
+    required this.name,
+    this.availableQty,
+  });
 }
 
 class Api {
@@ -184,10 +189,13 @@ class Api {
     return locations.map((location) => location.name).toList();
   }
 
-  static Future<List<LocationOption>> getGodownLocations() async {
+  static Future<List<LocationOption>> getGodownLocations({int? itemId}) async {
     try {
       const url = 'http://27.116.52.24:8060/getData';
-      const requestBody = {"table": "location"};
+      final requestBody = {
+        "table": "location",
+        if (itemId != null) "itemId": itemId,
+      };
       logApiHit('POST', url, source: 'GodownDropdown');
       print('Godown request body: $requestBody');
       final response = await client!.post(url, data: requestBody);
@@ -220,8 +228,26 @@ class Api {
                             '')
                         .toString()
                         .trim();
+                final availableQty = double.tryParse(
+                  (map['qty'] ??
+                          map['itemCount'] ??
+                          map['item_count'] ??
+                          map['availableQty'] ??
+                          map['available_qty'] ??
+                          map['stock'] ??
+                          map['totalQty'] ??
+                          map['total_qty'] ??
+                          map['balanceQty'] ??
+                          map['balance_qty'] ??
+                          0)
+                      .toString(),
+                );
                 if (id == null || name.isEmpty) return null;
-                return LocationOption(id: id, name: name);
+                return LocationOption(
+                  id: id,
+                  name: name,
+                  availableQty: availableQty,
+                );
               })
               .whereType<LocationOption>()
               .fold<List<LocationOption>>(<LocationOption>[], (list, item) {
@@ -233,7 +259,7 @@ class Api {
               });
           locations.sort((a, b) => a.name.compareTo(b.name));
           print(
-            'Godown parsed list: ${locations.map((e) => {'id': e.id, 'name': e.name}).toList()}',
+            'Godown parsed list: ${locations.map((e) => {'id': e.id, 'name': e.name, 'availableQty': e.availableQty}).toList()}',
           );
           return locations;
         } else {
