@@ -1,12 +1,15 @@
+import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
+import 'package:klitchen_stock/api/api.dart';
 import 'package:klitchen_stock/ui/controllers/filterItemsController.dart'
     show FilteredItemsController;
 import 'package:klitchen_stock/ui/models/items/filterItems.dart';
 import 'package:klitchen_stock/ui/views/showitemsDetails.dart'
     show ItemDetailScreen;
+import 'package:klitchen_stock/widgets/customAlertDialog.dart';
 import '../../widgets/addDialogbox.dart';
 import '../../utils/search_utils.dart';
 
@@ -139,6 +142,13 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _openAddCategoryItemDialog,
+        backgroundColor: kOrange,
+        foregroundColor: Colors.white,
+        tooltip: 'Add item in this category',
+        child: const Icon(Icons.add_rounded),
+      ),
       body: Column(
         children: [
           _buildSearchBar(),
@@ -256,15 +266,14 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
   }
 
   Widget _buildItemCard(BuildContext context, FilterItem item) {
-    final godownStock =
-        _fc.filteredItems
-            .where((candidate) => candidate.itemId == item.itemId)
-            .where((candidate) => candidate.location.trim().isNotEmpty)
-            .fold<Map<String, num>>({}, (stock, candidate) {
-              final location = _normalizeGodownKey(candidate.location);
-              stock[location] = (stock[location] ?? 0) + candidate.qty;
-              return stock;
-            });
+    final godownStock = _fc.filteredItems
+        .where((candidate) => candidate.itemId == item.itemId)
+        .where((candidate) => candidate.location.trim().isNotEmpty)
+        .fold<Map<String, num>>({}, (stock, candidate) {
+          final location = _normalizeGodownKey(candidate.location);
+          stock[location] = (stock[location] ?? 0) + candidate.qty;
+          return stock;
+        });
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -441,6 +450,353 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _openAddCategoryItemDialog() async {
+    final itemFormKey = GlobalKey<FormState>();
+    final engNameController = TextEditingController();
+    final gujNameController = TextEditingController();
+    String? selectedUnit;
+
+    const units = [
+      'Kg',
+      'gm',
+      'mg',
+      'Liter',
+      'ml',
+      'Piece',
+      'Dozen',
+      'Packet',
+      'Box',
+      'Set',
+      'Pair',
+      'Meter',
+      'Yard',
+      'Foot',
+      'Inch',
+      'Bundle',
+    ];
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 24,
+              ),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 440),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFFF8C42), Color(0xFFFF6B35)],
+                        ),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(11),
+                            ),
+                            child: const Icon(
+                              Icons.add_box_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Add New Item',
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                'Create item in this category',
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white.withValues(alpha: 0.75),
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
+                      child: Form(
+                        key: itemFormKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _dialogLabel('Category'),
+                            _readOnlyField(widget.categoryName ?? ''),
+                            const SizedBox(height: 14),
+                            _dialogLabel('Item Name (English)'),
+                            _formField(
+                              engNameController,
+                              'e.g. Tomato',
+                              'Enter English name',
+                            ),
+                            const SizedBox(height: 14),
+                            _dialogLabel('Item Name (Gujarati)'),
+                            _formField(
+                              gujNameController,
+                              'e.g. ટામેટા',
+                              'Enter Gujarati name',
+                            ),
+                            const SizedBox(height: 14),
+                            _dialogLabel('Unit'),
+                            DropdownButtonFormField2<String>(
+                              value: selectedUnit,
+                              decoration: _dropdownDecoration('Select unit'),
+                              items: units
+                                  .map(
+                                    (unit) => DropdownMenuItem(
+                                      value: unit,
+                                      child: Text(
+                                        unit,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) =>
+                                  setDialogState(() => selectedUnit = value),
+                              validator: (value) =>
+                                  value == null ? 'Please select a unit' : null,
+                              dropdownStyleData: DropdownStyleData(
+                                maxHeight: 200,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.pop(dialogContext),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: kBorder),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 13,
+                                ),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: GoogleFonts.poppins(
+                                  color: kTextSecondary,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: kOrange,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 13,
+                                ),
+                              ),
+                              onPressed: () async {
+                                if (!itemFormKey.currentState!.validate()) {
+                                  return;
+                                }
+
+                                try {
+                                  final result = await Api.addItem(
+                                    widget.categoryId.toString(),
+                                    engNameController.text,
+                                    gujNameController.text,
+                                    selectedUnit ?? '',
+                                  );
+
+                                  if (result['errorStatus'] == false) {
+                                    if (!mounted) return;
+                                    Navigator.pop(dialogContext);
+                                    await getItems();
+                                    if (!mounted) return;
+                                    CustomAlertDialog.showSuccessDialog(
+                                      context,
+                                      'Item added successfully!',
+                                    );
+                                  } else {
+                                    throw Exception('Failed to add item');
+                                  }
+                                } catch (_) {
+                                  if (!mounted) return;
+                                  Navigator.pop(dialogContext);
+                                  CustomAlertDialog.showErrorDialog(
+                                    context,
+                                    'Failed to add item.',
+                                  );
+                                }
+                              },
+                              child: Text(
+                                'Add Item',
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _dialogLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(
+        label,
+        style: GoogleFonts.poppins(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: kTextSecondary,
+        ),
+      ),
+    );
+  }
+
+  Widget _readOnlyField(String value) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F8FA),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: kBorder),
+      ),
+      child: Text(
+        value,
+        style: GoogleFonts.poppins(
+          fontSize: 13,
+          color: kTextPrimary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _formField(
+    TextEditingController controller,
+    String hint,
+    String validatorText,
+  ) {
+    return TextFormField(
+      controller: controller,
+      style: GoogleFonts.poppins(fontSize: 13, color: kTextPrimary),
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return validatorText;
+        }
+        return null;
+      },
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: GoogleFonts.poppins(fontSize: 12.5, color: kTextSecondary),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 13,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: kBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: kBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: kOrange, width: 1.4),
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _dropdownDecoration(String hintText) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: GoogleFonts.poppins(fontSize: 12.5, color: kTextSecondary),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: kBorder),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: kBorder),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: kOrange, width: 1.4),
       ),
     );
   }
