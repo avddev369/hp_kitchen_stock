@@ -168,62 +168,30 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
                                     setState(() => selectedCategory = value),
                                 categoryAliases,
                               ),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        _buildHeader("Seva Type"),
-                                        _buildDropdown(
-                                          "Seva Type",
-                                          items
-                                              .map(
-                                                (e) =>
-                                                    (e["type"] as String?) ??
-                                                    "",
-                                              )
-                                              .toSet()
-                                              .toList(),
-                                          selectedType,
-                                          (value) => setState(
-                                            () => selectedType = value,
-                                          ),
-                                          const {},
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        _buildHeader("Sevak Name"),
-                                        _buildDropdown(
-                                          "Sevak Name",
-                                          items
-                                              .map(
-                                                (e) =>
-                                                    (e["sevakName"]
-                                                        as String?) ??
-                                                    "",
-                                              )
-                                              .toSet()
-                                              .toList(),
-                                          selectedSevakName,
-                                          (value) => setState(
-                                            () => selectedSevakName = value,
-                                          ),
-                                          const {},
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                              _buildHeader("Seva Type"),
+                              _buildDropdown(
+                                "Seva Type",
+                                items
+                                    .map((e) => (e["type"] as String?) ?? "")
+                                    .toSet()
+                                    .toList(),
+                                selectedType,
+                                (value) => setState(() => selectedType = value),
+                                const {},
+                              ),
+                              _buildHeader("Sevak Name"),
+                              _buildDropdown(
+                                "Sevak Name",
+                                items
+                                    .map(
+                                      (e) => (e["sevakName"] as String?) ?? "",
+                                    )
+                                    .toSet()
+                                    .toList(),
+                                selectedSevakName,
+                                (value) =>
+                                    setState(() => selectedSevakName = value),
+                                const {},
                               ),
                             ],
                           ),
@@ -548,9 +516,7 @@ class _FilterDialogueBoxState extends State<FilterDialogueBox> {
       }
     }
 
-    return aliases.map(
-      (key, value) => MapEntry(key, value.toList()),
-    );
+    return aliases.map((key, value) => MapEntry(key, value.toList()));
   }
 
   Widget _buildHeader(String text) {
