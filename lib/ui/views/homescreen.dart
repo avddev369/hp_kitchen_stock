@@ -877,226 +877,231 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
     showDialog(
       context: context,
       builder: (context) {
+        final viewInsets = MediaQuery.of(context).viewInsets;
+        final size = MediaQuery.of(context).size;
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              insetPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 24,
-              ),
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 440),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Header
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFFFF8C42), Color(0xFFFF6B35)],
-                        ),
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          topRight: Radius.circular(20),
-                        ),
-                      ),
-                      child: Row(
+            return AnimatedPadding(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              padding: EdgeInsets.fromLTRB(16, 24, 16, viewInsets.bottom + 24),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: 440,
+                    maxHeight: size.height * 0.9,
+                  ),
+                  child: Material(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    clipBehavior: Clip.antiAlias,
+                    child: SingleChildScrollView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.18),
-                              borderRadius: BorderRadius.circular(11),
-                            ),
-                            child: const Icon(
-                              Icons.add_box_rounded,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Add New Item',
-                                style: GoogleFonts.poppins(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                            width: double.infinity,
+                            padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Color(0xFFFF8C42), Color(0xFFFF6B35)],
                               ),
-                              Text(
-                                'Fill in the item details below',
-                                style: GoogleFonts.poppins(
-                                  color: Colors.white.withOpacity(0.75),
-                                  fontSize: 11,
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.18),
+                                    borderRadius: BorderRadius.circular(11),
+                                  ),
+                                  child: const Icon(
+                                    Icons.add_box_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Form
-                    SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
-                      child: Form(
-                        key: itemFormKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _dialogLabel('Category'),
-                            _readOnlyField(categoryName),
-                            const SizedBox(height: 14),
-                            _dialogLabel('Item Name (English)'),
-                            _formField(
-                              engNameController,
-                              'e.g. Tomato',
-                              'Enter English name',
-                            ),
-                            const SizedBox(height: 14),
-                            _dialogLabel('Item Name (Gujarati)'),
-                            _formField(
-                              gujNameController,
-                              'e.g. ટામેટા',
-                              'Enter Gujarati name',
-                            ),
-                            const SizedBox(height: 14),
-                            _dialogLabel('Unit'),
-                            DropdownButtonFormField2<String>(
-                              value: selectedUnit,
-                              decoration: _dropdownDecoration('Select unit'),
-                              items: units
-                                  .map(
-                                    (u) => DropdownMenuItem(
-                                      value: u,
-                                      child: Text(
-                                        u,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 13,
-                                        ),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Add New Item',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
                                       ),
                                     ),
-                                  )
-                                  .toList(),
-                              onChanged: (v) =>
-                                  setDialogState(() => selectedUnit = v),
-                              validator: (v) =>
-                                  v == null ? 'Please select a unit' : null,
-                              dropdownStyleData: DropdownStyleData(
-                                maxHeight: 200,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  color: Colors.white,
+                                    Text(
+                                      'Fill in the item details below',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.white.withOpacity(0.75),
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
+                              ],
                             ),
-                            const SizedBox(height: 14),
-                          ],
-                        ),
-                      ),
-                    ),
-                    // Actions
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => Navigator.pop(context),
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: kBorder),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 13,
-                                ),
-                              ),
-                              child: Text(
-                                'Cancel',
-                                style: GoogleFonts.poppins(
-                                  color: kTextSecondary,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 14,
-                                ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
+                            child: Form(
+                              key: itemFormKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _dialogLabel('Category'),
+                                  _readOnlyField(categoryName),
+                                  const SizedBox(height: 14),
+                                  _dialogLabel('Item Name (English)'),
+                                  _formField(
+                                    engNameController,
+                                    'e.g. Tomato',
+                                    'Enter English name',
+                                  ),
+                                  const SizedBox(height: 14),
+                                  _dialogLabel('Item Name (Gujarati)'),
+                                  _formField(
+                                    gujNameController,
+                                    'e.g. ટામેટા',
+                                    'Enter Gujarati name',
+                                  ),
+                                  const SizedBox(height: 14),
+                                  _dialogLabel('Unit'),
+                                  DropdownButtonFormField2<String>(
+                                    value: selectedUnit,
+                                    decoration: _dropdownDecoration(
+                                      'Select unit',
+                                    ),
+                                    items: units
+                                        .map(
+                                          (u) => DropdownMenuItem(
+                                            value: u,
+                                            child: Text(
+                                              u,
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                        .toList(),
+                                    onChanged: (v) =>
+                                        setDialogState(() => selectedUnit = v),
+                                    validator: (v) => v == null
+                                        ? 'Please select a unit'
+                                        : null,
+                                    dropdownStyleData: DropdownStyleData(
+                                      maxHeight: 200,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 14),
+                                ],
                               ),
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: kOrange,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    style: OutlinedButton.styleFrom(
+                                      side: const BorderSide(color: kBorder),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 13,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Cancel',
+                                      style: GoogleFonts.poppins(
+                                        color: kTextSecondary,
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 13,
-                                ),
-                              ),
-                              onPressed: () async {
-                                if (itemFormKey.currentState!.validate()) {
-                                  try {
-                                    var result = await Api.addItem(
-                                      categoryId,
-                                      engNameController.text,
-                                      gujNameController.text,
-                                      selectedUnit ?? '',
-                                    );
-                                    if (result['errorStatus'] == false) {
-                                      Navigator.pop(context);
-                                      setState(() {});
-                                      Future.delayed(
-                                        const Duration(milliseconds: 100),
-                                        () {
-                                          CustomAlertDialog.showSuccessDialog(
-                                            context,
-                                            "Item added successfully!",
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: kOrange,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 13,
+                                      ),
+                                    ),
+                                    onPressed: () async {
+                                      if (itemFormKey.currentState!
+                                          .validate()) {
+                                        try {
+                                          var result = await Api.addItem(
+                                            categoryId,
+                                            engNameController.text,
+                                            gujNameController.text,
+                                            selectedUnit ?? '',
                                           );
-                                        },
-                                      );
-                                    }
-                                  } catch (e) {
-                                    Navigator.pop(context);
-                                    Future.delayed(
-                                      const Duration(milliseconds: 100),
-                                      () {
-                                        CustomAlertDialog.showErrorDialog(
-                                          context,
-                                          "Failed to add item.",
-                                        );
-                                      },
-                                    );
-                                  }
-                                }
-                              },
-                              child: Text(
-                                'Add Item',
-                                style: GoogleFonts.poppins(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
+                                          if (result['errorStatus'] == false) {
+                                            Navigator.pop(context);
+                                            setState(() {});
+                                            Future.delayed(
+                                              const Duration(milliseconds: 100),
+                                              () {
+                                                CustomAlertDialog.showSuccessDialog(
+                                                  context,
+                                                  "Item added successfully!",
+                                                );
+                                              },
+                                            );
+                                          }
+                                        } catch (e) {
+                                          Navigator.pop(context);
+                                          Future.delayed(
+                                            const Duration(milliseconds: 100),
+                                            () {
+                                              CustomAlertDialog.showErrorDialog(
+                                                context,
+                                                "Failed to add item.",
+                                              );
+                                            },
+                                          );
+                                        }
+                                      }
+                                    },
+                                    child: Text(
+                                      'Add Item',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             );
@@ -1222,184 +1227,191 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 24,
-          ),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 440),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFFFF8C42), Color(0xFFFF6B35)],
-                    ),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    ),
-                  ),
-                  child: Row(
+        final viewInsets = MediaQuery.of(dialogContext).viewInsets;
+        final size = MediaQuery.of(dialogContext).size;
+        return AnimatedPadding(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.fromLTRB(16, 24, 16, viewInsets.bottom + 24),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 440,
+                maxHeight: size.height * 0.9,
+              ),
+              child: Material(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                clipBehavior: Clip.antiAlias,
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.18),
-                          borderRadius: BorderRadius.circular(11),
+                        width: double.infinity,
+                        padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Color(0xFFFF8C42), Color(0xFFFF6B35)],
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.category_rounded,
-                          color: Colors.white,
-                          size: 20,
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.18),
+                                borderRadius: BorderRadius.circular(11),
+                              ),
+                              child: const Icon(
+                                Icons.category_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Add New Category',
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                Text(
+                                  'Enter name in both languages',
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white.withOpacity(0.75),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Add New Category',
-                            style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          Text(
-                            'Enter name in both languages',
-                            style: GoogleFonts.poppins(
-                              color: Colors.white.withOpacity(0.75),
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
-                  child: Form(
-                    key: catFormKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _dialogLabel('Category Name (English)'),
-                        _formField(
-                          engNameController,
-                          'e.g. Vegetables',
-                          'Please enter category name',
-                        ),
-                        const SizedBox(height: 14),
-                        _dialogLabel('Category Name (Gujarati)'),
-                        _formField(
-                          gujNameController,
-                          'e.g. શાકભાજી',
-                          'Please enter category name',
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(dialogContext),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: kBorder),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                          ),
-                          child: Text(
-                            'Cancel',
-                            style: GoogleFonts.poppins(
-                              color: kTextSecondary,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,
-                            ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
+                        child: Form(
+                          key: catFormKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _dialogLabel('Category Name (English)'),
+                              _formField(
+                                engNameController,
+                                'e.g. Vegetables',
+                                'Please enter category name',
+                              ),
+                              const SizedBox(height: 14),
+                              _dialogLabel('Category Name (Gujarati)'),
+                              _formField(
+                                gujNameController,
+                                'e.g. શાકભાજી',
+                                'Please enter category name',
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: kOrange,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () => Navigator.pop(dialogContext),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: kBorder),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 13,
+                                  ),
+                                ),
+                                child: Text(
+                                  'Cancel',
+                                  style: GoogleFonts.poppins(
+                                    color: kTextSecondary,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                          ),
-                          onPressed: () async {
-                            if (catFormKey.currentState!.validate()) {
-                              try {
-                                var result = await Api.addCategory(
-                                  engNameController.text,
-                                  gujNameController.text,
-                                );
-                                if (result['errorStatus'] == false) {
-                                  if (!mounted) return;
-                                  Navigator.pop(dialogContext);
-                                  await _loadCategories();
-                                  Future.delayed(
-                                    const Duration(milliseconds: 100),
-                                    () {
-                                      CustomAlertDialog.showSuccessDialog(
-                                        context,
-                                        "Category added successfully!",
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: kOrange,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 13,
+                                  ),
+                                ),
+                                onPressed: () async {
+                                  if (catFormKey.currentState!.validate()) {
+                                    try {
+                                      var result = await Api.addCategory(
+                                        engNameController.text,
+                                        gujNameController.text,
                                       );
-                                    },
-                                  );
-                                }
-                              } catch (e) {
-                                if (!mounted) return;
-                                Navigator.pop(dialogContext);
-                                Future.delayed(
-                                  const Duration(milliseconds: 100),
-                                  () {
-                                    CustomAlertDialog.showErrorDialog(
-                                      context,
-                                      "Failed to add category.",
-                                    );
-                                  },
-                                );
-                              }
-                            }
-                          },
-                          child: Text(
-                            'Add Category',
-                            style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
+                                      if (result['errorStatus'] == false) {
+                                        if (!mounted) return;
+                                        Navigator.pop(dialogContext);
+                                        await _loadCategories();
+                                        Future.delayed(
+                                          const Duration(milliseconds: 100),
+                                          () {
+                                            CustomAlertDialog.showSuccessDialog(
+                                              context,
+                                              "Category added successfully!",
+                                            );
+                                          },
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (!mounted) return;
+                                      Navigator.pop(dialogContext);
+                                      Future.delayed(
+                                        const Duration(milliseconds: 100),
+                                        () {
+                                          CustomAlertDialog.showErrorDialog(
+                                            context,
+                                            "Failed to add category.",
+                                          );
+                                        },
+                                      );
+                                    }
+                                  }
+                                },
+                                child: Text(
+                                  'Add Category',
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
         );

@@ -25,11 +25,11 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
 
   String? selectedAction = "add";
   List<dynamic> items = [];
-  List<dynamic> filteredItems = []; // For search filtering
+  List<dynamic> filteredItems = [];
   bool isLoading = false;
   bool isSearching = false;
   TextEditingController searchController = TextEditingController();
-  Map<String, dynamic> selectedFilters = {}; // Store selected filter values
+  Map<String, dynamic> selectedFilters = {};
   bool isFilterApplied = false;
 
   @override
@@ -541,13 +541,16 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
     }
 
     final bool isAdd = item["action"] == "add";
+    final borderColor = isAdd
+        ? const Color(0xFF22A45D)
+        : const Color(0xFFE05050);
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 5),
       decoration: BoxDecoration(
         color: kSurface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: kBorder),
+        border: Border.all(color: borderColor, width: 2),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Column(

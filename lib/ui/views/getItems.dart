@@ -459,6 +459,7 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
     final engNameController = TextEditingController();
     final gujNameController = TextEditingController();
     String? selectedUnit;
+    bool isSubmitting = false;
 
     const units = [
       'Kg',
@@ -482,221 +483,260 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
+        final viewInsets = MediaQuery.of(dialogContext).viewInsets;
+        final size = MediaQuery.of(dialogContext).size;
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              insetPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 24,
-              ),
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 440),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFFFF8C42), Color(0xFFFF6B35)],
-                        ),
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          topRight: Radius.circular(20),
-                        ),
-                      ),
-                      child: Row(
+            return AnimatedPadding(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              padding: EdgeInsets.fromLTRB(16, 24, 16, viewInsets.bottom + 24),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: 440,
+                    maxHeight: size.height * 0.9,
+                  ),
+                  child: Material(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    clipBehavior: Clip.antiAlias,
+                    child: SingleChildScrollView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.18),
-                              borderRadius: BorderRadius.circular(11),
+                            width: double.infinity,
+                            padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Color(0xFFFF8C42), Color(0xFFFF6B35)],
+                              ),
                             ),
-                            child: const Icon(
-                              Icons.add_box_rounded,
-                              color: Colors.white,
-                              size: 20,
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.18),
+                                    borderRadius: BorderRadius.circular(11),
+                                  ),
+                                  child: const Icon(
+                                    Icons.add_box_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Add New Item',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Create item in this category',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.75,
+                                        ),
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Add New Item',
-                                style: GoogleFonts.poppins(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              Text(
-                                'Create item in this category',
-                                style: GoogleFonts.poppins(
-                                  color: Colors.white.withValues(alpha: 0.75),
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
-                      child: Form(
-                        key: itemFormKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _dialogLabel('Category'),
-                            _readOnlyField(widget.categoryName ?? ''),
-                            const SizedBox(height: 14),
-                            _dialogLabel('Item Name (English)'),
-                            _formField(
-                              engNameController,
-                              'e.g. Tomato',
-                              'Enter English name',
-                            ),
-                            const SizedBox(height: 14),
-                            _dialogLabel('Item Name (Gujarati)'),
-                            _formField(
-                              gujNameController,
-                              'e.g. ટામેટા',
-                              'Enter Gujarati name',
-                            ),
-                            const SizedBox(height: 14),
-                            _dialogLabel('Unit'),
-                            DropdownButtonFormField2<String>(
-                              value: selectedUnit,
-                              decoration: _dropdownDecoration('Select unit'),
-                              items: units
-                                  .map(
-                                    (unit) => DropdownMenuItem(
-                                      value: unit,
-                                      child: Text(
-                                        unit,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 13,
+                          IgnorePointer(
+                            ignoring: isSubmitting,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
+                              child: Form(
+                                key: itemFormKey,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _dialogLabel('Category'),
+                                    _readOnlyField(widget.categoryName ?? ''),
+                                    const SizedBox(height: 14),
+                                    _dialogLabel('Item Name (English)'),
+                                    _formField(
+                                      engNameController,
+                                      'e.g. Tomato',
+                                      'Enter English name',
+                                    ),
+                                    const SizedBox(height: 14),
+                                    _dialogLabel('Item Name (Gujarati)'),
+                                    _formField(
+                                      gujNameController,
+                                      'e.g. ટામેટા',
+                                      'Enter Gujarati name',
+                                    ),
+                                    const SizedBox(height: 14),
+                                    _dialogLabel('Unit'),
+                                    DropdownButtonFormField2<String>(
+                                      value: selectedUnit,
+                                      isExpanded: true,
+                                      decoration: _dropdownDecoration(
+                                        'Select unit',
+                                      ),
+                                      items: units
+                                          .map(
+                                            (unit) => DropdownMenuItem(
+                                              value: unit,
+                                              child: Text(
+                                                unit,
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                      onChanged: isSubmitting
+                                          ? null
+                                          : (value) => setDialogState(
+                                              () => selectedUnit = value,
+                                            ),
+                                      validator: (value) => value == null
+                                          ? 'Please select a unit'
+                                          : null,
+                                      dropdownStyleData: DropdownStyleData(
+                                        maxHeight: 200,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          color: Colors.white,
                                         ),
                                       ),
                                     ),
-                                  )
-                                  .toList(),
-                              onChanged: (value) =>
-                                  setDialogState(() => selectedUnit = value),
-                              validator: (value) =>
-                                  value == null ? 'Please select a unit' : null,
-                              dropdownStyleData: DropdownStyleData(
-                                maxHeight: 200,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => Navigator.pop(dialogContext),
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: kBorder),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 13,
-                                ),
-                              ),
-                              child: Text(
-                                'Cancel',
-                                style: GoogleFonts.poppins(
-                                  color: kTextSecondary,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 14,
+                                    const SizedBox(height: 14),
+                                  ],
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: kOrange,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: isSubmitting
+                                        ? null
+                                        : () => Navigator.pop(dialogContext),
+                                    style: OutlinedButton.styleFrom(
+                                      side: const BorderSide(color: kBorder),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 13,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Cancel',
+                                      style: GoogleFonts.poppins(
+                                        color: kTextSecondary,
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 13,
-                                ),
-                              ),
-                              onPressed: () async {
-                                if (!itemFormKey.currentState!.validate()) {
-                                  return;
-                                }
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: kOrange,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 13,
+                                      ),
+                                    ),
+                                    onPressed: () async {
+                                      if (isSubmitting) {
+                                        return;
+                                      }
+                                      if (!itemFormKey.currentState!
+                                          .validate()) {
+                                        return;
+                                      }
 
-                                try {
-                                  final result = await Api.addItem(
-                                    widget.categoryId.toString(),
-                                    engNameController.text,
-                                    gujNameController.text,
-                                    selectedUnit ?? '',
-                                  );
+                                      setDialogState(() {
+                                        isSubmitting = true;
+                                      });
 
-                                  if (result['errorStatus'] == false) {
-                                    if (!mounted) return;
-                                    Navigator.pop(dialogContext);
-                                    await getItems();
-                                    if (!mounted) return;
-                                    CustomAlertDialog.showSuccessDialog(
-                                      context,
-                                      'Item added successfully!',
-                                    );
-                                  } else {
-                                    throw Exception('Failed to add item');
-                                  }
-                                } catch (_) {
-                                  if (!mounted) return;
-                                  Navigator.pop(dialogContext);
-                                  CustomAlertDialog.showErrorDialog(
-                                    context,
-                                    'Failed to add item.',
-                                  );
-                                }
-                              },
-                              child: Text(
-                                'Add Item',
-                                style: GoogleFonts.poppins(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
+                                      try {
+                                        final result = await Api.addItem(
+                                          widget.categoryId.toString(),
+                                          engNameController.text,
+                                          gujNameController.text,
+                                          selectedUnit ?? '',
+                                        );
+
+                                        if (result['errorStatus'] == false) {
+                                          if (!mounted) return;
+                                          Navigator.pop(dialogContext);
+                                          await getItems();
+                                          if (!mounted) return;
+                                          CustomAlertDialog.showSuccessDialog(
+                                            context,
+                                            'Item added successfully!',
+                                          );
+                                        } else {
+                                          throw Exception('Failed to add item');
+                                        }
+                                      } catch (_) {
+                                        setDialogState(() {
+                                          isSubmitting = false;
+                                        });
+                                        if (!mounted) return;
+                                        CustomAlertDialog.showErrorDialog(
+                                          context,
+                                          'Failed to add item.',
+                                        );
+                                      }
+                                    },
+                                    child: isSubmitting
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : Text(
+                                            'Add Item',
+                                            style: GoogleFonts.poppins(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             );

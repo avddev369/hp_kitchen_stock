@@ -196,142 +196,148 @@ class _AddItemScreenState extends State<AddItemScreen> {
           ],
         ),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _ItemInfoBanner(itemName: widget.itemName),
-                  const SizedBox(height: 14),
-                  _SectionCard(
-                    children: [
-                      _FormField(
-                        label: 'Item Name',
-                        child: _readonlyField(widget.itemName),
-                      ),
-                      const SizedBox(height: 12),
-                      _FormField(
-                        label: 'Quantity',
-                        child: _inputField(
-                          controller: _quantityController,
-                          hint: 'Enter quantity',
-                          inputType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _ItemInfoBanner(itemName: widget.itemName),
+                    const SizedBox(height: 14),
+                    _SectionCard(
+                      children: [
+                        _FormField(
+                          label: 'Item Name',
+                          child: _readonlyField(widget.itemName),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      _FormField(
-                        label: 'Expiry Date',
-                        child: GestureDetector(
-                          onTap: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: DateTime.now(),
-                              firstDate: DateTime.now(),
-                              lastDate: DateTime(2101),
-                              builder: (ctx, child) => Theme(
-                                data: Theme.of(ctx).copyWith(
-                                  colorScheme: const ColorScheme.light(
-                                    primary: _kOrange,
+                        const SizedBox(height: 12),
+                        _FormField(
+                          label: 'Quantity',
+                          child: _inputField(
+                            controller: _quantityController,
+                            hint: 'Enter quantity',
+                            inputType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _FormField(
+                          label: 'Expiry Date',
+                          child: GestureDetector(
+                            onTap: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: DateTime.now(),
+                                firstDate: DateTime.now(),
+                                lastDate: DateTime(2101),
+                                builder: (ctx, child) => Theme(
+                                  data: Theme.of(ctx).copyWith(
+                                    colorScheme: const ColorScheme.light(
+                                      primary: _kOrange,
+                                    ),
                                   ),
+                                  child: child!,
                                 ),
-                                child: child!,
-                              ),
-                            );
-                            if (picked != null) {
-                              setState(
-                                () => _expiryController.text = picked
-                                    .toLocal()
-                                    .toString()
-                                    .split(' ')[0],
                               );
-                            }
-                          },
-                          child: AbsorbPointer(
-                            child: _inputField(
-                              controller: _expiryController,
-                              hint: 'Select date',
-                              suffixIcon: const Icon(
-                                Icons.calendar_today_rounded,
-                                size: 16,
-                                color: _kTextSecondary,
+                              if (picked != null) {
+                                setState(
+                                  () => _expiryController.text = picked
+                                      .toLocal()
+                                      .toString()
+                                      .split(' ')[0],
+                                );
+                              }
+                            },
+                            child: AbsorbPointer(
+                              child: _inputField(
+                                controller: _expiryController,
+                                hint: 'Select date',
+                                suffixIcon: const Icon(
+                                  Icons.calendar_today_rounded,
+                                  size: 16,
+                                  color: _kTextSecondary,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _SectionCard(
-                    children: [
-                      _FormField(
-                        label: 'Type',
-                        child: _dropdownField(
-                          hint: 'Select type',
-                          value: _selectedType,
-                          items: const ['Purchase', 'Seva'],
-                          onChanged: (v) => setState(() {
-                            _selectedType = v;
-                            _showSevakFields = v == 'Seva';
-                          }),
-                        ),
-                      ),
-                      if (_showSevakFields) ...[
-                        const SizedBox(height: 12),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _SectionCard(
+                      children: [
                         _FormField(
-                          label: 'Sevak Name',
-                          child: _inputField(
-                            controller: _sevakNameController,
-                            hint: 'Enter sevak name',
+                          label: 'Type',
+                          child: _dropdownField(
+                            hint: 'Select type',
+                            value: _selectedType,
+                            items: const ['Purchase', 'Seva'],
+                            onChanged: (v) => setState(() {
+                              _selectedType = v;
+                              _showSevakFields = v == 'Seva';
+                            }),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        _FormField(
-                          label: 'Sevak No',
-                          child: _inputField(
-                            controller: _sevakNoController,
-                            hint: '10-digit mobile number',
-                            inputType: TextInputType.phone,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(10),
-                            ],
+                        if (_showSevakFields) ...[
+                          const SizedBox(height: 12),
+                          _FormField(
+                            label: 'Sevak Name',
+                            child: _inputField(
+                              controller: _sevakNameController,
+                              hint: 'Enter sevak name',
+                            ),
                           ),
+                          const SizedBox(height: 12),
+                          _FormField(
+                            label: 'Sevak No',
+                            child: _inputField(
+                              controller: _sevakNoController,
+                              hint: '10-digit mobile number',
+                              inputType: TextInputType.phone,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(10),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _SectionCard(
+                      children: [
+                        _FormField(
+                          label: 'Godown',
+                          child: _loadingGodowns
+                              ? const _GodownLoader()
+                              : _godownOptions.isEmpty
+                              ? _noGodownText()
+                              : _locationDropdownField(
+                                  hint: 'Select godown',
+                                  value: _selectedGodown,
+                                  items: _godownOptions,
+                                  onChanged: (v) =>
+                                      setState(() => _selectedGodown = v),
+                                ),
                         ),
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _SectionCard(
-                    children: [
-                      _FormField(
-                        label: 'Godown',
-                        child: _loadingGodowns
-                            ? const _GodownLoader()
-                            : _godownOptions.isEmpty
-                            ? _noGodownText()
-                            : _locationDropdownField(
-                                hint: 'Select godown',
-                                value: _selectedGodown,
-                                items: _godownOptions,
-                                onChanged: (v) =>
-                                    setState(() => _selectedGodown = v),
-                              ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 80),
-                ],
+                    ),
+                    const SizedBox(height: 80),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       bottomNavigationBar: _BottomBar(
         label: 'Add Item',
@@ -435,8 +441,7 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
       return;
     }
 
-    final stockForGodown =
-        _stockForSelectedGodown();
+    final stockForGodown = _stockForSelectedGodown();
     final convertedQty = _convertQuantity(
       quantity: enteredQty,
       fromUnit: _selectedUnit!,
@@ -545,78 +550,84 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _ItemInfoBanner(itemName: widget.itemName, isRemove: true),
-            const SizedBox(height: 14),
-            _SectionCard(
-              children: [
-                _FormField(
-                  label: 'Item Name',
-                  child: _readonlyField(widget.itemName),
-                ),
-                const SizedBox(height: 12),
-                _FormField(
-                  label: 'Quantity',
-                  child: _inputField(
-                    controller: _quantityController,
-                    hint: 'Enter quantity',
-                    inputType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _FormField(
-                  label: 'Unit',
-                  child: _dropdownField(
-                    hint: 'Select unit',
-                    value: _selectedUnit,
-                    items: _compatibleUnitsFor(widget.itemUnit),
-                    onChanged: (v) => setState(() => _selectedUnit = v),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _SectionCard(
-              children: [
-                _FormField(
-                  label: 'Godown',
-                  child: _loadingGodowns
-                      ? const _GodownLoader()
-                      : _godownOptions.isEmpty
-                      ? _noGodownText()
-                      : _locationDropdownField(
-                          hint: 'Select godown',
-                          value: _selectedGodown,
-                          items: _godownOptions,
-                          onChanged: (v) => setState(() => _selectedGodown = v),
-                        ),
-                ),
-              ],
-            ),
-            if (_selectedGodown != null) ...[
-              const SizedBox(height: 12),
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _ItemInfoBanner(itemName: widget.itemName, isRemove: true),
+              const SizedBox(height: 14),
               _SectionCard(
                 children: [
                   _FormField(
-                    label: 'Available Stock',
-                    child: _readonlyField(
-                      '${_formatQuantity(_stockForSelectedGodown())} ${widget.itemUnit}',
+                    label: 'Item Name',
+                    child: _readonlyField(widget.itemName),
+                  ),
+                  const SizedBox(height: 12),
+                  _FormField(
+                    label: 'Quantity',
+                    child: _inputField(
+                      controller: _quantityController,
+                      hint: 'Enter quantity',
+                      inputType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _FormField(
+                    label: 'Unit',
+                    child: _dropdownField(
+                      hint: 'Select unit',
+                      value: _selectedUnit,
+                      items: _compatibleUnitsFor(widget.itemUnit),
+                      onChanged: (v) => setState(() => _selectedUnit = v),
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              _SectionCard(
+                children: [
+                  _FormField(
+                    label: 'Godown',
+                    child: _loadingGodowns
+                        ? const _GodownLoader()
+                        : _godownOptions.isEmpty
+                        ? _noGodownText()
+                        : _locationDropdownField(
+                            hint: 'Select godown',
+                            value: _selectedGodown,
+                            items: _godownOptions,
+                            onChanged: (v) =>
+                                setState(() => _selectedGodown = v),
+                          ),
+                  ),
+                ],
+              ),
+              if (_selectedGodown != null) ...[
+                const SizedBox(height: 12),
+                _SectionCard(
+                  children: [
+                    _FormField(
+                      label: 'Available Stock',
+                      child: _readonlyField(
+                        '${_formatQuantity(_stockForSelectedGodown())} ${widget.itemUnit}',
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 80),
             ],
-            const SizedBox(height: 80),
-          ],
+          ),
         ),
       ),
       bottomNavigationBar: _BottomBar(
@@ -850,7 +861,10 @@ Widget _inputField({
   return TextField(
     controller: controller,
     keyboardType: inputType,
+    textInputAction: TextInputAction.done,
     inputFormatters: inputFormatters,
+    onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+    onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
     style: GoogleFonts.poppins(fontSize: 13.5, color: _kTextPrimary),
     decoration: InputDecoration(
       hintText: hint,
@@ -1034,14 +1048,10 @@ double? _convertQuantity({
 
   if (from == to) return quantity;
 
-  const conversionToBase = {
-    'kg': 1000.0,
-    'gm': 1.0,
-    'ltr': 1000.0,
-    'ml': 1.0,
-  };
+  const conversionToBase = {'kg': 1000.0, 'gm': 1.0, 'ltr': 1000.0, 'ml': 1.0};
 
-  if (!conversionToBase.containsKey(from) || !conversionToBase.containsKey(to)) {
+  if (!conversionToBase.containsKey(from) ||
+      !conversionToBase.containsKey(to)) {
     return null;
   }
 
