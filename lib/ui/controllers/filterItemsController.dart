@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:get/get.dart';
 import 'package:klitchen_stock/ui/models/items/filterItems.dart';
 
@@ -11,7 +9,7 @@ class FilteredItemsController extends GetxController {
 
   Future<void> fetchFilteredItems(int categoryId) async {
     var response = await Api.getFilteredItems(categoryId);
-    if (response != null && response['data'] != null) {
+    if (response['data'] != null) {
       items.assignAll(response['data']);
     }
   }
@@ -41,13 +39,12 @@ class FilteredItemsController extends GetxController {
   }
 
   // Method to get total quantity for a specific itemId
-  int getTotalQuantityForItemId(int itemId) {
-    return filteredItems.where((item) => item.itemId == itemId).fold(0, (
+  double getTotalQuantityForItemId(int itemId) {
+    return filteredItems.where((item) => item.itemId == itemId).fold(0.0, (
       sum,
       item,
     ) {
-      int qty = int.tryParse(item.qty?.toString() ?? '0') ?? 0;
-      return sum + qty;
+      return sum + item.qty;
     });
   }
 }

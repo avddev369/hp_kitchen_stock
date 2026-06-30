@@ -27,6 +27,12 @@ class Api {
     print('API HIT$tag: $method $url');
   }
 
+  static void logRequestBody(String url, dynamic body, {String? source}) {
+    final tag = source == null ? '' : ' [$source]';
+    print('API BODY$tag: $url');
+    print(body);
+  }
+
   static Future<void> clientInstance() async {
     if (client == null) {
       client = Dio();
@@ -37,6 +43,9 @@ class Api {
             if (!options.path.contains('http')) {
               options.path = Urls.mainDomain + options.path;
             }
+
+            logApiHit(options.method, options.path, source: 'Dio');
+            logRequestBody(options.path, options.data, source: 'Dio');
 
             String? token = await Preferences.getToken();
             if (token != null && token.isNotEmpty) {
@@ -67,12 +76,14 @@ class Api {
   ) async {
     try {
       final Uri url = Uri.parse(Urls.endpoint('/login'));
+      final requestBody = {'mobile': username, 'password': password};
       logApiHit('POST', url.toString(), source: 'Login');
+      logRequestBody(url.toString(), requestBody, source: 'Login');
 
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'mobile': username, 'password': password}),
+        body: jsonEncode(requestBody),
       );
 
       print("Response Status Code: ${response.statusCode}");
@@ -122,6 +133,7 @@ class Api {
       var requestBody = {
         "table": "category", // Add this to the request body
       };
+      logRequestBody(Urls.getItems, requestBody, source: 'GetItems');
 
       final response = await client!.post(Urls.getItems, data: requestBody);
 
@@ -156,6 +168,7 @@ class Api {
         "table": "item",
         "filters": {"categoryId": categoryId},
       };
+      logRequestBody(url, requestBody, source: 'FilteredItemsScreen');
 
       final response = await client!.post(url, data: requestBody);
 
@@ -194,7 +207,7 @@ class Api {
         if (itemId != null) "itemId": itemId,
       };
       logApiHit('POST', url, source: 'GodownDropdown');
-      print('Godown request body: $requestBody');
+      logRequestBody(url, requestBody, source: 'GodownDropdown');
       final response = await client!.post(url, data: requestBody);
 
       if (response.statusCode == 200) {
@@ -277,7 +290,7 @@ class Api {
       final url = Urls.endpoint('/getManageItemsByItemId');
       final body = {"itemId": itemId.toString()};
       logApiHit('POST', url, source: 'ItemDetailScreen');
-      print('Item detail request body: $body');
+      logRequestBody(url, body, source: 'ItemDetailScreen');
       final response = await http.post(
         Uri.parse(url),
         body: json.encode(body),
@@ -301,12 +314,15 @@ class Api {
 
   static Future<List<dynamic>> searchItems(String keyword) async {
     final url = Uri.parse(Urls.endpoint('/search'));
+    final requestBody = {"keyword": keyword};
 
     try {
+      logApiHit('POST', url.toString(), source: 'SearchItems');
+      logRequestBody(url.toString(), requestBody, source: 'SearchItems');
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"keyword": keyword}),
+        body: jsonEncode(requestBody),
       );
 
       if (response.statusCode == 200) {
@@ -339,9 +355,12 @@ class Api {
         "unit": unit,
         "createdBy": username,
       };
+      final url = Urls.endpoint('/insertData');
+      logApiHit('POST', url, source: 'AddItem');
+      logRequestBody(url, requestBody, source: 'AddItem');
 
       final response = await http.post(
-        Uri.parse(Urls.endpoint('/insertData')),
+        Uri.parse(url),
         headers: {
           'Content-Type': 'application/json', // Ensure correct content type
         },
@@ -383,9 +402,12 @@ class Api {
         "gujName": gujName,
         "createdBy": username,
       };
+      final url = Urls.endpoint('/insertData');
+      logApiHit('POST', url, source: 'AddCategory');
+      logRequestBody(url, requestBody, source: 'AddCategory');
 
       final response = await http.post(
-        Uri.parse(Urls.endpoint('/insertData')),
+        Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(requestBody),
       );

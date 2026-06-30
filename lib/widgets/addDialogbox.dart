@@ -22,6 +22,7 @@ class AddItemScreen extends StatefulWidget {
   final int categoryId;
   final String categoryName;
   final String itemName;
+  final String itemUnit;
 
   const AddItemScreen({
     Key? key,
@@ -29,6 +30,7 @@ class AddItemScreen extends StatefulWidget {
     required this.categoryId,
     required this.categoryName,
     required this.itemName,
+    required this.itemUnit,
   }) : super(key: key);
 
   @override
@@ -120,7 +122,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
       };
       final url = Urls.endpoint('/insertItemToMultipleLocations');
       Api.logApiHit('POST', url, source: 'AddItemDialog');
-      print('Add item request body: $body');
+      Api.logRequestBody(url, body, source: 'AddItemDialog');
 
       final response = await http.post(
         Uri.parse(url),
@@ -220,19 +222,24 @@ class _AddItemScreenState extends State<AddItemScreen> {
                         const SizedBox(height: 12),
                         _FormField(
                           label: 'Quantity',
-                        child: _inputField(
-                          controller: _quantityController,
-                          hint: 'Enter quantity',
-                          inputType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'^\d*\.?\d{0,3}$'),
+                          child: _inputField(
+                            controller: _quantityController,
+                            hint: 'Enter quantity',
+                            inputType: const TextInputType.numberWithOptions(
+                              decimal: true,
                             ),
-                          ],
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'^\d*\.?\d{0,3}$'),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 12),
+                        _FormField(
+                          label: 'Qty Unit',
+                          child: _readonlyField(widget.itemUnit),
+                        ),
                         const SizedBox(height: 12),
                         _FormField(
                           label: 'Expiry Date',
@@ -457,13 +464,6 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
       return;
     }
 
-    if (!_isWholeQuantity(convertedQty)) {
-      _showSnack(
-        'This quantity converts to ${_formatQuantity(convertedQty)} ${widget.itemUnit}, but only whole ${widget.itemUnit} values are supported. Please adjust the quantity or unit.',
-      );
-      return;
-    }
-
     if (convertedQty > stockForGodown) {
       _showSnack(
         'Only ${_formatQuantity(stockForGodown)} ${widget.itemUnit} is available in ${_selectedGodown!.name}.',
@@ -490,7 +490,7 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
       };
       final url = Urls.endpoint('/insertItemToMultipleLocations');
       Api.logApiHit('POST', url, source: 'RemoveItemDialog');
-      print('Remove item request body: $body');
+      Api.logRequestBody(url, body, source: 'RemoveItemDialog');
 
       final response = await http.post(
         Uri.parse(url),
@@ -596,7 +596,7 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
                   ),
                   const SizedBox(height: 12),
                   _FormField(
-                    label: 'Unit',
+                    label: 'Qty Unit',
                     child: _readonlyField(_selectedUnit ?? widget.itemUnit),
                   ),
                 ],
@@ -992,6 +992,7 @@ Future<bool?> showAddItemDialog(
   int categoryId,
   String categoryName,
   String itemName,
+  String itemUnit,
 ) async {
   return Navigator.push<bool>(
     context,
@@ -1001,6 +1002,7 @@ Future<bool?> showAddItemDialog(
         categoryId: categoryId,
         categoryName: categoryName,
         itemName: itemName,
+        itemUnit: itemUnit,
       ),
     ),
   );
@@ -1091,8 +1093,4 @@ String _formatQuantity(num value) {
 
 String _normalizeUnitKey(String value) {
   return value.trim().toLowerCase();
-}
-
-bool _isWholeQuantity(double value) {
-  return (value - value.roundToDouble()).abs() < 0.000001;
 }

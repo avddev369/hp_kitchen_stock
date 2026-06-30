@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'package:dotted_line/dotted_line.dart';
-import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
+import '../api/api.dart';
 import '../utils/api_urls.dart';
 
 import 'filterDialogueBox.dart';
@@ -43,9 +42,10 @@ class _FilterScreenState extends State<FilterScreen> {
     setState(() => isLoading = true);
 
     try {
-      final response = await http.post(
-        Uri.parse(Urls.endpoint('/getManageItems')),
-      );
+      final url = Urls.endpoint('/getManageItems');
+      Api.logApiHit('POST', url, source: 'FilterScreen');
+      Api.logRequestBody(url, null, source: 'FilterScreen');
+      final response = await http.post(Uri.parse(url));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = json.decode(response.body);

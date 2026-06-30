@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'dart:convert';
 
+import '../../api/api.dart';
 import '../../widgets/filterDialogueBox.dart';
 import '../../utils/api_urls.dart';
 import '../../utils/search_utils.dart';
@@ -113,9 +114,10 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
     setState(() => isLoading = true);
 
     try {
-      final response = await http.post(
-        Uri.parse(Urls.endpoint('/getManageItems')),
-      );
+      final url = Urls.endpoint('/getManageItems');
+      Api.logApiHit('POST', url, source: 'ReportScreen');
+      Api.logRequestBody(url, null, source: 'ReportScreen');
+      final response = await http.post(Uri.parse(url));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = json.decode(response.body);

@@ -59,6 +59,13 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
     });
   }
 
+  String _formatQty(num qty) {
+    if (qty == qty.roundToDouble()) {
+      return qty.toInt().toString();
+    }
+    return qty.toString();
+  }
+
   List<FilterItem> get _visibleItems {
     if (_searchQuery.trim().isEmpty) {
       return _fc.filteredItems.toList();
@@ -359,7 +366,7 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
                           borderRadius: BorderRadius.circular(5),
                         ),
                         child: Text(
-                          '${item.qty} ${item.unit}',
+                          '${_formatQty(item.qty)} ${item.unit}',
                           style: GoogleFonts.poppins(
                             fontSize: 10.5,
                             color: kOrange,
@@ -384,6 +391,7 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
                           item.categoryId,
                           widget.categoryName ?? '',
                           item.engName,
+                          item.unit,
                         );
                         if (didUpdate == true && mounted) {
                           await getItems();

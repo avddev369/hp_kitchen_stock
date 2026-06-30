@@ -8,7 +8,7 @@ import '../../utils/search_utils.dart';
 class ItemDetailScreen extends StatefulWidget {
   final int itemId;
   final String itemName;
-  final int? qty;
+  final double? qty;
 
   const ItemDetailScreen({
     Key? key,

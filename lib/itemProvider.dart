@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'api/api.dart';
 import 'utils/api_urls.dart';
 
 class ItemProvider with ChangeNotifier {
@@ -17,9 +18,10 @@ class ItemProvider with ChangeNotifier {
 
     _isLoading = true;
     notifyListeners();
-    final response = await http.post(
-      Uri.parse(Urls.endpoint('/getManageItems')),
-    );
+    final url = Urls.endpoint('/getManageItems');
+    Api.logApiHit('POST', url, source: 'ItemProvider');
+    Api.logRequestBody(url, null, source: 'ItemProvider');
+    final response = await http.post(Uri.parse(url));
 
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
