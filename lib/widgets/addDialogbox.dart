@@ -453,6 +453,13 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
       return;
     }
 
+    if (!_isWholeQuantity(convertedQty)) {
+      _showSnack(
+        'This quantity converts to ${_formatQuantity(convertedQty)} ${widget.itemUnit}, but only whole ${widget.itemUnit} values are supported. Please adjust the quantity or unit.',
+      );
+      return;
+    }
+
     if (convertedQty > stockForGodown) {
       _showSnack(
         'Only ${_formatQuantity(stockForGodown)} ${widget.itemUnit} is available in ${_selectedGodown!.name}.',
@@ -1083,4 +1090,8 @@ String _formatQuantity(num value) {
 
 String _normalizeUnitKey(String value) {
   return value.trim().toLowerCase();
+}
+
+bool _isWholeQuantity(double value) {
+  return (value - value.roundToDouble()).abs() < 0.000001;
 }
