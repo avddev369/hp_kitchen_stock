@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:klitchen_stock/ui/controllers/filterItemsController.dart';
 import '../api/api.dart';
+import '../utils/api_urls.dart';
 
 // ─── Shared colours ───────────────────────────────────────────────────────────
 const Color _kOrange = Color(0xFFFF6B35);
@@ -78,9 +79,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
   Future<void> _submit() async {
     final qtyText = _quantityController.text.trim();
-    if (qtyText.isEmpty ||
-        int.tryParse(qtyText) == null ||
-        int.parse(qtyText) <= 0) {
+    final enteredQty = double.tryParse(qtyText);
+    if (qtyText.isEmpty || enteredQty == null || enteredQty <= 0) {
       _showSnack('Quantity must be a positive number!');
       return;
     }
@@ -115,10 +115,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
         'expiryDate': _expiryController.text.trim(),
         'createdBy': 1,
         'locations': [
-          {'locationId': _selectedGodown!.id, 'qty': int.parse(qtyText)},
+          {'locationId': _selectedGodown!.id, 'qty': enteredQty},
         ],
       };
-      const url = 'http://27.116.52.24:8060/insertItemToMultipleLocations';
+      final url = Urls.endpoint('/insertItemToMultipleLocations');
       Api.logApiHit('POST', url, source: 'AddItemDialog');
       print('Add item request body: $body');
 
@@ -220,15 +220,19 @@ class _AddItemScreenState extends State<AddItemScreen> {
                         const SizedBox(height: 12),
                         _FormField(
                           label: 'Quantity',
-                          child: _inputField(
-                            controller: _quantityController,
-                            hint: 'Enter quantity',
-                            inputType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
+                        child: _inputField(
+                          controller: _quantityController,
+                          hint: 'Enter quantity',
+                          inputType: const TextInputType.numberWithOptions(
+                            decimal: true,
                           ),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d*\.?\d{0,3}$'),
+                            ),
+                          ],
                         ),
+                      ),
                         const SizedBox(height: 12),
                         _FormField(
                           label: 'Expiry Date',
@@ -484,7 +488,7 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
           },
         ],
       };
-      const url = 'http://27.116.52.24:8060/insertItemToMultipleLocations';
+      final url = Urls.endpoint('/insertItemToMultipleLocations');
       Api.logApiHit('POST', url, source: 'RemoveItemDialog');
       print('Remove item request body: $body');
 
@@ -584,19 +588,16 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
                         decimal: true,
                       ),
                       inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d*\.?\d{0,3}$'),
+                        ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 12),
                   _FormField(
                     label: 'Unit',
-                    child: _dropdownField(
-                      hint: 'Select unit',
-                      value: _selectedUnit,
-                      items: _compatibleUnitsFor(widget.itemUnit),
-                      onChanged: (v) => setState(() => _selectedUnit = v),
-                    ),
+                    child: _readonlyField(_selectedUnit ?? widget.itemUnit),
                   ),
                 ],
               ),

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 
 import '../../widgets/filterDialogueBox.dart';
+import '../../utils/api_urls.dart';
 import '../../utils/search_utils.dart';
 
 class ManageItemsScreen extends StatefulWidget {
@@ -53,51 +54,53 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
 
   void _filterItems() {
     setState(() {
-      filteredItems = _sortLatestFirst(items.where((item) {
-        bool matchesAction =
-            selectedAction == null || item["action"] == selectedAction;
-        bool matchesFilter = true;
+      filteredItems = _sortLatestFirst(
+        items.where((item) {
+          bool matchesAction =
+              selectedAction == null || item["action"] == selectedAction;
+          bool matchesFilter = true;
 
-        if (isFilterApplied) {
-          if (selectedFilters["itemName"]?.isNotEmpty == true) {
-            matchesFilter &=
-                item["itemName"]?.toLowerCase() ==
-                selectedFilters["itemName"]?.toLowerCase();
-          }
-          if (selectedFilters["categoryName"]?.isNotEmpty == true) {
-            matchesFilter &=
-                item["categoryName"]?.toLowerCase() ==
-                selectedFilters["categoryName"]?.toLowerCase();
-          }
-          if (selectedFilters["type"]?.isNotEmpty == true) {
-            matchesFilter &=
-                item["type"]?.toLowerCase() ==
-                selectedFilters["type"]?.toLowerCase();
-          }
-          if (selectedFilters["sevakName"]?.isNotEmpty == true) {
-            matchesFilter &=
-                item["sevakName"]?.toLowerCase() ==
-                selectedFilters["sevakName"]?.toLowerCase();
-          }
-
-          // ✅ Check Date Filtering
-          DateTime? itemDate = DateTime.tryParse(item["date"]);
-          if (itemDate != null) {
-            if (selectedFilters["startDate"] != null) {
+          if (isFilterApplied) {
+            if (selectedFilters["itemName"]?.isNotEmpty == true) {
               matchesFilter &=
-                  itemDate.isAfter(selectedFilters["startDate"]) ||
-                  itemDate.isAtSameMomentAs(selectedFilters["startDate"]);
+                  item["itemName"]?.toLowerCase() ==
+                  selectedFilters["itemName"]?.toLowerCase();
             }
-            if (selectedFilters["endDate"] != null) {
+            if (selectedFilters["categoryName"]?.isNotEmpty == true) {
               matchesFilter &=
-                  itemDate.isBefore(selectedFilters["endDate"]) ||
-                  itemDate.isAtSameMomentAs(selectedFilters["endDate"]);
+                  item["categoryName"]?.toLowerCase() ==
+                  selectedFilters["categoryName"]?.toLowerCase();
+            }
+            if (selectedFilters["type"]?.isNotEmpty == true) {
+              matchesFilter &=
+                  item["type"]?.toLowerCase() ==
+                  selectedFilters["type"]?.toLowerCase();
+            }
+            if (selectedFilters["sevakName"]?.isNotEmpty == true) {
+              matchesFilter &=
+                  item["sevakName"]?.toLowerCase() ==
+                  selectedFilters["sevakName"]?.toLowerCase();
+            }
+
+            // ✅ Check Date Filtering
+            DateTime? itemDate = DateTime.tryParse(item["date"]);
+            if (itemDate != null) {
+              if (selectedFilters["startDate"] != null) {
+                matchesFilter &=
+                    itemDate.isAfter(selectedFilters["startDate"]) ||
+                    itemDate.isAtSameMomentAs(selectedFilters["startDate"]);
+              }
+              if (selectedFilters["endDate"] != null) {
+                matchesFilter &=
+                    itemDate.isBefore(selectedFilters["endDate"]) ||
+                    itemDate.isAtSameMomentAs(selectedFilters["endDate"]);
+              }
             }
           }
-        }
 
-        return matchesAction && matchesFilter;
-      }).toList());
+          return matchesAction && matchesFilter;
+        }).toList(),
+      );
     });
   }
 
@@ -111,7 +114,7 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse("http://27.116.52.24:8060/getManageItems"),
+        Uri.parse(Urls.endpoint('/getManageItems')),
       );
 
       if (response.statusCode == 200) {
@@ -201,59 +204,63 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
         return;
       }
 
-      filteredItems = _sortLatestFirst(items.where((item) {
-        if (isNotEmpty(filter["itemName"]) &&
-            item["itemName"] != filter["itemName"])
-          return false;
-
-        if (isNotEmpty(filter["categoryName"]) &&
-            item["categoryName"] != filter["categoryName"])
-          return false;
-
-        if (isNotEmpty(filter["type"]) && item["type"] != filter["type"])
-          return false;
-
-        if (isNotEmpty(filter["sevakName"]) &&
-            item["sevakName"] != filter["sevakName"])
-          return false;
-
-        // 🔹 Filter by item creation date
-        DateTime? itemDate = DateTime.tryParse(item["date"]);
-        if (itemDate == null) return false;
-
-        if (startDate != null) {
-          DateTime max = endDate != null
-              ? endDate.add(Duration(days: 1)).subtract(Duration(seconds: 1))
-              : startDate.add(Duration(days: 1)).subtract(Duration(seconds: 1));
-          if (itemDate.isBefore(startDate) || itemDate.isAfter(max)) {
+      filteredItems = _sortLatestFirst(
+        items.where((item) {
+          if (isNotEmpty(filter["itemName"]) &&
+              item["itemName"] != filter["itemName"])
             return false;
-          }
-        }
 
-        // 🔹 Filter by expiry date
-        final expiryStr = item["expiryDate"];
-        if (expiryStr == null || expiryStr is! String || expiryStr.isEmpty)
-          return false;
-
-        DateTime? itemExpDate = DateTime.tryParse(expiryStr);
-        if (itemExpDate == null) return false;
-
-        if (expirystartDate != null) {
-          DateTime maxExp = expiryendDate != null
-              ? expiryendDate
-                    .add(Duration(days: 1))
-                    .subtract(Duration(seconds: 1))
-              : expirystartDate
-                    .add(Duration(days: 1))
-                    .subtract(Duration(seconds: 1));
-          if (itemExpDate.isBefore(expirystartDate) ||
-              itemExpDate.isAfter(maxExp)) {
+          if (isNotEmpty(filter["categoryName"]) &&
+              item["categoryName"] != filter["categoryName"])
             return false;
-          }
-        }
 
-        return true;
-      }).toList());
+          if (isNotEmpty(filter["type"]) && item["type"] != filter["type"])
+            return false;
+
+          if (isNotEmpty(filter["sevakName"]) &&
+              item["sevakName"] != filter["sevakName"])
+            return false;
+
+          // 🔹 Filter by item creation date
+          DateTime? itemDate = DateTime.tryParse(item["date"]);
+          if (itemDate == null) return false;
+
+          if (startDate != null) {
+            DateTime max = endDate != null
+                ? endDate.add(Duration(days: 1)).subtract(Duration(seconds: 1))
+                : startDate
+                      .add(Duration(days: 1))
+                      .subtract(Duration(seconds: 1));
+            if (itemDate.isBefore(startDate) || itemDate.isAfter(max)) {
+              return false;
+            }
+          }
+
+          // 🔹 Filter by expiry date
+          final expiryStr = item["expiryDate"];
+          if (expiryStr == null || expiryStr is! String || expiryStr.isEmpty)
+            return false;
+
+          DateTime? itemExpDate = DateTime.tryParse(expiryStr);
+          if (itemExpDate == null) return false;
+
+          if (expirystartDate != null) {
+            DateTime maxExp = expiryendDate != null
+                ? expiryendDate
+                      .add(Duration(days: 1))
+                      .subtract(Duration(seconds: 1))
+                : expirystartDate
+                      .add(Duration(days: 1))
+                      .subtract(Duration(seconds: 1));
+            if (itemExpDate.isBefore(expirystartDate) ||
+                itemExpDate.isAfter(maxExp)) {
+              return false;
+            }
+          }
+
+          return true;
+        }).toList(),
+      );
 
       if (filteredItems.isEmpty) {
         print("No data found for selected filters.");
@@ -329,19 +336,21 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                 style: const TextStyle(color: kTextPrimary),
                 onChanged: (query) {
                   setState(() {
-                    filteredItems = _sortLatestFirst(items.where((item) {
-                      return matchesSearchQuery(query, [
-                        item["itemName"]?.toString(),
-                        item["itemGujName"]?.toString(),
-                        item["gujName"]?.toString(),
-                        item["categoryName"]?.toString(),
-                        item["categoryGujName"]?.toString(),
-                        item["sevakName"]?.toString(),
-                        item["type"]?.toString(),
-                        item["location"]?.toString(),
-                        item["itemTo"]?.toString(),
-                      ]);
-                    }).toList());
+                    filteredItems = _sortLatestFirst(
+                      items.where((item) {
+                        return matchesSearchQuery(query, [
+                          item["itemName"]?.toString(),
+                          item["itemGujName"]?.toString(),
+                          item["gujName"]?.toString(),
+                          item["categoryName"]?.toString(),
+                          item["categoryGujName"]?.toString(),
+                          item["sevakName"]?.toString(),
+                          item["type"]?.toString(),
+                          item["location"]?.toString(),
+                          item["itemTo"]?.toString(),
+                        ]);
+                      }).toList(),
+                    );
                   });
                 },
               )
@@ -449,7 +458,10 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: kOrangeLight,
                   borderRadius: BorderRadius.circular(10),
@@ -488,7 +500,6 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
       ],
     );
   }
-
 
   Widget _buildRadioButton(String value, String label) {
     final isSelected = selectedAction == value;
@@ -532,9 +543,12 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
 
   Widget _buildItemCard(dynamic item) {
     String formattedExpiry = "N/A";
-    if (item["expiryDate"] != null && item["expiryDate"].toString().isNotEmpty) {
+    if (item["expiryDate"] != null &&
+        item["expiryDate"].toString().isNotEmpty) {
       try {
-        formattedExpiry = DateFormat('dd-MM-yyyy').format(DateTime.parse(item["expiryDate"]));
+        formattedExpiry = DateFormat(
+          'dd-MM-yyyy',
+        ).format(DateTime.parse(item["expiryDate"]));
       } catch (_) {
         formattedExpiry = "Invalid";
       }
@@ -574,7 +588,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: isAdd ? const Color(0xFFD1F5E4) : const Color(0xFFFDE8E8),
+                  color: isAdd
+                      ? const Color(0xFFD1F5E4)
+                      : const Color(0xFFFDE8E8),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -582,7 +598,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    color: isAdd ? const Color(0xFF0A6640) : const Color(0xFF9B1C1C),
+                    color: isAdd
+                        ? const Color(0xFF0A6640)
+                        : const Color(0xFF9B1C1C),
                   ),
                 ),
               ),
@@ -605,7 +623,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
             children: [
               _compactCell(
                 "Sevak",
-                item["sevakName"]?.isNotEmpty == true ? item["sevakName"] : "N/A",
+                item["sevakName"]?.isNotEmpty == true
+                    ? item["sevakName"]
+                    : "N/A",
               ),
               const SizedBox(width: 5),
               _compactCell(

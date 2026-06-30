@@ -66,7 +66,7 @@ class Api {
     BuildContext context,
   ) async {
     try {
-      final Uri url = Uri.parse('http://27.116.52.24:8060/login');
+      final Uri url = Uri.parse(Urls.endpoint('/login'));
       logApiHit('POST', url.toString(), source: 'Login');
 
       final response = await http.post(
@@ -123,10 +123,7 @@ class Api {
         "table": "category", // Add this to the request body
       };
 
-      final response = await client!.post(
-        'http://27.116.52.24:8060/getData/', // The URL of the API
-        data: requestBody, // Sending the body with the request
-      );
+      final response = await client!.post(Urls.getItems, data: requestBody);
 
       // Print the raw response data for debugging
       print('Response Data: ${response.data}');
@@ -153,7 +150,7 @@ class Api {
 
   static Future<Map<String, dynamic>> getFilteredItems(int categoryId) async {
     try {
-      const url = 'http://27.116.52.24:8060/getData';
+      final url = Urls.endpoint('/getData');
       logApiHit('POST', url, source: 'FilteredItemsScreen');
       var requestBody = {
         "table": "item",
@@ -191,7 +188,7 @@ class Api {
 
   static Future<List<LocationOption>> getGodownLocations({int? itemId}) async {
     try {
-      const url = 'http://27.116.52.24:8060/getData';
+      final url = Urls.endpoint('/getData');
       final requestBody = {
         "table": "location",
         if (itemId != null) "itemId": itemId,
@@ -277,7 +274,7 @@ class Api {
 
   static Future<Map<String, dynamic>> getItemDetails(int itemId) async {
     try {
-      const url = 'http://27.116.52.24:8060/getManageItemsByItemId';
+      final url = Urls.endpoint('/getManageItemsByItemId');
       final body = {"itemId": itemId.toString()};
       logApiHit('POST', url, source: 'ItemDetailScreen');
       print('Item detail request body: $body');
@@ -303,7 +300,7 @@ class Api {
   }
 
   static Future<List<dynamic>> searchItems(String keyword) async {
-    final url = Uri.parse("http://27.116.52.24:8060/search");
+    final url = Uri.parse(Urls.endpoint('/search'));
 
     try {
       final response = await http.post(
@@ -344,9 +341,7 @@ class Api {
       };
 
       final response = await http.post(
-        Uri.parse(
-          'http://27.116.52.24:8060/insertData',
-        ), // API URL for adding item
+        Uri.parse(Urls.endpoint('/insertData')),
         headers: {
           'Content-Type': 'application/json', // Ensure correct content type
         },
@@ -390,7 +385,7 @@ class Api {
       };
 
       final response = await http.post(
-        Uri.parse('http://27.116.52.24:8060/insertData'),
+        Uri.parse(Urls.endpoint('/insertData')),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(requestBody),
       );

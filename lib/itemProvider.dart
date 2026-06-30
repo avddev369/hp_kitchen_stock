@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'utils/api_urls.dart';
 
 class ItemProvider with ChangeNotifier {
   List<Map<String, dynamic>> _items = [];
@@ -17,7 +18,7 @@ class ItemProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     final response = await http.post(
-      Uri.parse("http://27.116.52.24:8060/getManageItems"),
+      Uri.parse(Urls.endpoint('/getManageItems')),
     );
 
     if (response.statusCode == 200) {
@@ -25,7 +26,9 @@ class ItemProvider with ChangeNotifier {
       if (!jsonResponse["errorStatus"]) {
         _items = [
           ...List<Map<String, dynamic>>.from(jsonResponse["data"]["add"] ?? []),
-          ...List<Map<String, dynamic>>.from(jsonResponse["data"]["remove"] ?? []),
+          ...List<Map<String, dynamic>>.from(
+            jsonResponse["data"]["remove"] ?? [],
+          ),
         ];
         _isFetched = true;
       }

@@ -4,6 +4,7 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import '../utils/api_urls.dart';
 
 import 'filterDialogueBox.dart';
 
@@ -43,7 +44,7 @@ class _FilterScreenState extends State<FilterScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse("http://27.116.52.24:8060/getManageItems"),
+        Uri.parse(Urls.endpoint('/getManageItems')),
       );
 
       if (response.statusCode == 200) {
