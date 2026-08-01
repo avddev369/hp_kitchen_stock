@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:klitchen_stock/ui/controllers/filterItemsController.dart';
 import '../api/api.dart';
+import '../helper/preferences.dart';
 import '../utils/api_urls.dart';
 
 // ─── Shared colours ───────────────────────────────────────────────────────────
@@ -123,10 +124,16 @@ class _AddItemScreenState extends State<AddItemScreen> {
       final url = Urls.endpoint('/insertItemToMultipleLocations');
       Api.logApiHit('POST', url, source: 'AddItemDialog');
       Api.logRequestBody(url, body, source: 'AddItemDialog');
+      final token = await Preferences.getToken();
+      Api.logToken(token, source: 'AddItemDialog');
 
       final response = await http.post(
         Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null && token.isNotEmpty)
+            'Authorization': 'Bearer $token',
+        },
         body: jsonEncode(body),
       );
       print('Add item response: ${response.body}');
@@ -491,10 +498,16 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
       final url = Urls.endpoint('/insertItemToMultipleLocations');
       Api.logApiHit('POST', url, source: 'RemoveItemDialog');
       Api.logRequestBody(url, body, source: 'RemoveItemDialog');
+      final token = await Preferences.getToken();
+      Api.logToken(token, source: 'RemoveItemDialog');
 
       final response = await http.post(
         Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null && token.isNotEmpty)
+            'Authorization': 'Bearer $token',
+        },
         body: jsonEncode(body),
       );
       print('Remove item response: ${response.body}');
