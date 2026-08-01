@@ -55,6 +55,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  void _showSnack(String message, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: GoogleFonts.poppins(fontSize: 13)),
+        backgroundColor: error ? Colors.red.shade600 : Colors.green.shade600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  Future<void> _createGodown() async {
+    final created = await showCreateGodownDialog(context);
+    if (created == true) {
+      _showSnack('Godown created successfully!');
+      _loadProfile();
+    }
+  }
+
+  Future<void> _createUser() async {
+    final created = await showCreateUserDialog(context);
+    if (created == true) {
+      _showSnack('User created successfully!');
+    }
+  }
+
   void _confirmLogout() {
     showDialog(
       context: context,
@@ -202,9 +229,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildSectionLabel('Quick Actions'),
                   const SizedBox(height: 8),
                   _buildActionTile(
-                    icon: Icons.admin_panel_settings_rounded,
-                    label: 'Manage Access',
-                    onTap: () => Get.to(() => const ManageAccessScreen()),
+                    icon: Icons.warehouse_rounded,
+                    label: 'Create Godown',
+                    onTap: _createGodown,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildActionTile(
+                    icon: Icons.person_add_rounded,
+                    label: 'Create User',
+                    onTap: _createUser,
                   ),
                   const SizedBox(height: 20),
                 ],
