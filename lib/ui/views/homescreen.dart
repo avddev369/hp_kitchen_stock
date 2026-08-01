@@ -3,14 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:klitchen_stock/ui/views/reportScreen.dart'
-    show ManageItemsScreen;
 import '../../api/api.dart';
-import '../../helper/preferences.dart';
 import '../../utils/search_utils.dart';
 import '../../widgets/customAlertDialog.dart';
-import 'auth/login.dart';
 import 'getItems.dart';
+import 'profile_screen.dart';
+import 'reportScreen.dart' show ManageItemsScreen;
 
 class ShowItemsScreen extends StatefulWidget {
   final String Username;
@@ -97,112 +95,6 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
     super.dispose();
   }
 
-  void _logout(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          elevation: 0,
-          backgroundColor: Colors.white,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.logout_rounded,
-                    color: Colors.red.shade400,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Logout',
-                  style: GoogleFonts.poppins(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: kTextPrimary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Are you sure you want to log out?',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: kTextSecondary,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: kBorder),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                        ),
-                        child: Text(
-                          'Cancel',
-                          style: GoogleFonts.poppins(
-                            color: kTextSecondary,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red.shade400,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                        ),
-                        onPressed: () async {
-                          Navigator.of(context).pop();
-                          await Preferences.clearAll();
-                          Get.offAll(() => LoginScreen());
-                        },
-                        child: Text(
-                          'Logout',
-                          style: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -256,34 +148,21 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Kitchen Stock',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Track categories and manage stock faster',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white.withValues(alpha: 0.82),
-                        fontSize: 12.5,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'Kitchen Stock',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               _buildHeaderIconButton(
                 icon: Icons.list_alt_rounded,
-                onTap: () => Get.to(ManageItemsScreen()),
+                onTap: () => Get.to(() => const ManageItemsScreen()),
               ),
               const SizedBox(width: 8),
               _buildHeaderIconButton(
@@ -291,14 +170,10 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
                 onTap: _loadCategories,
               ),
               const SizedBox(width: 8),
-              _buildHeaderIconButton(
-                icon: Icons.logout_rounded,
-                onTap: () => _logout(context),
-              ),
+              _buildProfileButton(),
             ],
           ),
-
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           _buildSearchBar(),
         ],
       ),
@@ -319,6 +194,34 @@ class _ShowItemsScreenState extends State<ShowItemsScreen> {
           width: 44,
           height: 44,
           child: Icon(icon, color: Colors.white, size: 22),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileButton() {
+    final initial = widget.Username.trim().isNotEmpty
+        ? widget.Username.trim()[0].toUpperCase()
+        : 'U';
+    return Material(
+      color: Colors.white.withValues(alpha: 0.18),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => Get.to(() => const ProfileScreen()),
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Center(
+            child: Text(
+              initial,
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+              ),
+            ),
+          ),
         ),
       ),
     );

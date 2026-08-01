@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 
 import '../../api/api.dart';
+import '../../helper/preferences.dart';
 import '../../widgets/filterDialogueBox.dart';
 import '../../utils/api_urls.dart';
 import '../../utils/search_utils.dart';
@@ -117,7 +118,16 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
       final url = Urls.endpoint('/getManageItems');
       Api.logApiHit('POST', url, source: 'ReportScreen');
       Api.logRequestBody(url, null, source: 'ReportScreen');
-      final response = await http.post(Uri.parse(url));
+      final token = await Preferences.getToken();
+      Api.logToken(token, source: 'ReportScreen');
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null && token.isNotEmpty)
+            'Authorization': 'Bearer $token',
+        },
+      );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = json.decode(response.body);

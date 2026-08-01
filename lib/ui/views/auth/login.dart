@@ -8,6 +8,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:klitchen_stock/helper/preferences.dart';
 import '../../../api/api.dart';
 import '../../controllers/logincontroller.dart';
+import '../admin/manage_access_screen.dart';
 import '../homescreen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -77,6 +78,12 @@ class _LoginScreenState extends State<LoginScreen> {
         await Preferences.saveToken(token);
         await Preferences.saveUserName(userName);
 
+        final bool isMaster = response['data']['isMaster'] == true;
+        final List godowns = (response['data']['godowns'] as List?) ?? [];
+        if (isMaster && godowns.isEmpty && mounted) {
+          await _promptCreateGodown();
+        }
+
         Get.offAll(() => ShowItemsScreen(Username: userName));
       } else {
         _showErrorDialog(response?['msg'] ?? 'Unknown error');
@@ -87,6 +94,45 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _promptCreateGodown() async {
+    final wantsToAdd = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'No godown available',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'You need at least one godown before you can start adding stock. Add one now?',
+          style: GoogleFonts.poppins(fontSize: 13.5, color: kTextSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Later',
+              style: GoogleFonts.poppins(color: kTextSecondary),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: kOrange),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              'Add Godown',
+              style: GoogleFonts.poppins(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (wantsToAdd == true && mounted) {
+      await showCreateGodownDialog(context);
     }
   }
 

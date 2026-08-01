@@ -67,11 +67,13 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
 
   List<FilterItem> get _accessibleItems {
     if (_isMaster) return _fc.filteredItems.toList();
-    return _fc.filteredItems
-        .where(
-          (item) => _allowedGodowns.contains(_normalizeGodownKey(item.location)),
-        )
-        .toList();
+    return _fc.filteredItems.where((item) {
+      final location = _normalizeGodownKey(item.location);
+      // Items not yet stocked in any godown have no location — still show
+      // them so the user can add stock to their own godown.
+      if (location.isEmpty) return true;
+      return _allowedGodowns.contains(location);
+    }).toList();
   }
 
   getItems() async {

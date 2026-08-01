@@ -35,7 +35,9 @@ class Api {
 
   static void logToken(String? token, {String? source}) {
     final tag = source == null ? '' : ' [$source]';
-    print('API TOKEN$tag: ${token != null && token.isNotEmpty ? token : 'none'}');
+    print(
+      'API TOKEN$tag: ${token != null && token.isNotEmpty ? token : 'none'}',
+    );
   }
 
   static Future<void> clientInstance() async {
@@ -107,6 +109,8 @@ class Api {
             String name = userData['name'] ?? 'Unknown';
             int? id = int.tryParse(userData['id']?.toString() ?? '');
             bool isMaster = userData['isMaster'] == true;
+            bool isAdmin = userData['isAdmin'] == true;
+            bool isFix = userData['isFix'] == true;
             String mobile = userData['mobile']?.toString() ?? '';
             final godowns = (userData['godowns'] is List)
                 ? (userData['godowns'] as List)
@@ -125,6 +129,8 @@ class Api {
             await Preferences.saveUserName(name);
             if (id != null) await Preferences.saveUserId(id);
             await Preferences.saveIsMaster(isMaster);
+            await Preferences.saveIsAdmin(isAdmin);
+            await Preferences.saveIsFix(isFix);
             await Preferences.saveMobile(mobile);
             await Preferences.saveGodowns(godowns);
             await Preferences.saveGodownIds(godownIds);
@@ -136,6 +142,8 @@ class Api {
                 'name': name,
                 'id': id,
                 'isMaster': isMaster,
+                'isAdmin': isAdmin,
+                'isFix': isFix,
                 'mobile': mobile,
                 'godowns': godowns,
                 'godownIds': godownIds,
@@ -306,7 +314,9 @@ class Api {
           final isMaster = await Preferences.getIsMaster();
           if (!isMaster) {
             final allowedIds = (await Preferences.getGodownIds()).toSet();
-            locations.retainWhere((location) => allowedIds.contains(location.id));
+            locations.retainWhere(
+              (location) => allowedIds.contains(location.id),
+            );
           }
 
           locations.sort((a, b) => a.name.compareTo(b.name));
@@ -465,5 +475,75 @@ class Api {
     } catch (error) {
       throw Exception('Error occurred during adding category: $error');
     }
+  }
+
+  // ─── Master-only access management ─────────────────────────────────────
+
+  static Future<Map<String, dynamic>> _authPost(
+    String path,
+    Map<String, dynamic> body, {
+    String? source,
+  }) async {
+    final url = Urls.endpoint(path);
+    logApiHit('POST', url, source: source);
+    logRequestBody(url, body, source: source);
+    logToken(await Preferences.getToken(), source: source);
+    try {
+      final response = await client!.post(url, data: body);
+      return Map<String, dynamic>.from(response.data);
+    } on DioError catch (error) {
+      final data = error.response?.data;
+      if (data is Map) {
+        return Map<String, dynamic>.from(data);
+      }
+      return {
+        'errorStatus': true,
+        'message': error.message ?? 'Request failed',
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> createGodown(String godownName) {
+    return _authPost('/createGodown', {
+      'godown_name': godownName,
+    }, source: 'CreateGodown');
+  }
+
+  static Future<Map<String, dynamic>> createSubUser({
+    required String name,
+    required String mobile,
+    required String password,
+    bool isAdmin = false,
+    bool isFix = false,
+  }) {
+    return _authPost('/createSubUser', {
+      'name': name,
+      'mobile': mobile,
+      'password': password,
+      'isAdmin': isAdmin,
+      'isFix': isFix,
+    }, source: 'CreateSubUser');
+  }
+
+  static Future<Map<String, dynamic>> assignGodown(int userId, int godownId) {
+    return _authPost('/assignGodown', {
+      'userId': userId,
+      'godownId': godownId,
+    }, source: 'AssignGodown');
+  }
+
+  static Future<Map<String, dynamic>> unassignGodown(int userId, int godownId) {
+    return _authPost('/unassignGodown', {
+      'userId': userId,
+      'godownId': godownId,
+    }, source: 'UnassignGodown');
+  }
+
+  static Future<Map<String, dynamic>> getGodowns() {
+    return _authPost('/getGodowns', {}, source: 'GetGodowns');
+  }
+
+  static Future<Map<String, dynamic>> getSubUsers() {
+    return _authPost('/getSubUsers', {}, source: 'GetSubUsers');
   }
 }

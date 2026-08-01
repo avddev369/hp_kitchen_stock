@@ -11,6 +11,8 @@ class Preferences {
   static const String _emailKey = 'email';
   static const String _userIdKey = 'userId';
   static const String _isMasterKey = 'isMaster';
+  static const String _isAdminKey = 'isAdmin';
+  static const String _isFixKey = 'isFix';
   static const String _mobileKey = 'mobile';
   static const String _godownsKey = 'godowns';
   static const String _godownIdsKey = 'godownIds';
@@ -100,6 +102,30 @@ class Preferences {
   static Future<bool> getIsMaster() async {
     if (_preferences == null) await init();
     return _preferences!.getBool(_isMasterKey) ?? false;
+  }
+
+  /// **Save Is Admin flag**
+  static Future<void> saveIsAdmin(bool isAdmin) async {
+    if (_preferences == null) await init();
+    await _preferences!.setBool(_isAdminKey, isAdmin);
+  }
+
+  /// **Get Is Admin flag**
+  static Future<bool> getIsAdmin() async {
+    if (_preferences == null) await init();
+    return _preferences!.getBool(_isAdminKey) ?? false;
+  }
+
+  /// **Save Is Fix flag**
+  static Future<void> saveIsFix(bool isFix) async {
+    if (_preferences == null) await init();
+    await _preferences!.setBool(_isFixKey, isFix);
+  }
+
+  /// **Get Is Fix flag**
+  static Future<bool> getIsFix() async {
+    if (_preferences == null) await init();
+    return _preferences!.getBool(_isFixKey) ?? false;
   }
 
   /// **Save Mobile**

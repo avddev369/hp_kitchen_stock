@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:klitchen_stock/ui/controllers/filterItemsController.dart';
 import '../api/api.dart';
 import '../helper/preferences.dart';
+import '../ui/views/admin/manage_access_screen.dart';
 import '../utils/api_urls.dart';
 
 // ─── Shared colours ───────────────────────────────────────────────────────────
@@ -338,7 +339,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
                           child: _loadingGodowns
                               ? const _GodownLoader()
                               : _godownOptions.isEmpty
-                              ? _noGodownText()
+                              ? _noGodownText(context, () {
+                                  setState(() => _loadingGodowns = true);
+                                  _fetchGodowns();
+                                })
                               : _locationDropdownField(
                                   hint: 'Select godown',
                                   value: _selectedGodown,
@@ -622,7 +626,10 @@ class _RemoveItemScreenState extends State<RemoveItemScreen> {
                     child: _loadingGodowns
                         ? const _GodownLoader()
                         : _godownOptions.isEmpty
-                        ? _noGodownText()
+                        ? _noGodownText(context, () {
+                            setState(() => _loadingGodowns = true);
+                            _fetchGodowns();
+                          })
                         : _locationDropdownField(
                             hint: 'Select godown',
                             value: _selectedGodown,
@@ -988,12 +995,35 @@ Widget _locationDropdownField({
   );
 }
 
-Widget _noGodownText() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8),
-    child: Text(
-      'No godown found. Please add godown in location table.',
-      style: GoogleFonts.poppins(fontSize: 12, color: Colors.red),
+Widget _noGodownText(BuildContext context, VoidCallback onGodownAdded) {
+  return InkWell(
+    borderRadius: BorderRadius.circular(10),
+    onTap: () async {
+      final created = await showCreateGodownDialog(context);
+      if (created == true) onGodownAdded();
+    },
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.add_circle_outline_rounded,
+            color: _kOrange,
+            size: 18,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              'No godowns available. Tap here to add a godown.',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: _kOrange,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     ),
   );
 }
