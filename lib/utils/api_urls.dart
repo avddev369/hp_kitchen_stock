@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 
 class Urls {
-  static const String apiUrlDev = 'http://27.116.52.24:8060';
-  static const String apiUrlProd = 'http://27.116.52.24:8160';
+  // static const String apiUrlDev = 'http://27.116.52.24:8060';
+  // static const String apiUrlProd = 'http://27.116.52.24:8060';
+  static const String apiUrlDev = 'http://localhost:8060';
+  static const String apiUrlProd = 'http://localhost:8060';
 
   static String get baseUrl => kReleaseMode ? apiUrlProd : apiUrlDev;
 
@@ -14,3 +16,6 @@ class Urls {
   static String get mainDomain => '$baseUrl/';
   static String get getItems => endpoint('/getData/');
 }
+
+
+

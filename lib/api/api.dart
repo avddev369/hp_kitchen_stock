@@ -33,6 +33,11 @@ class Api {
     print(body);
   }
 
+  static void logToken(String? token, {String? source}) {
+    final tag = source == null ? '' : ' [$source]';
+    print('API TOKEN$tag: ${token != null && token.isNotEmpty ? token : 'none'}');
+  }
+
   static Future<void> clientInstance() async {
     if (client == null) {
       client = Dio();
@@ -48,6 +53,7 @@ class Api {
             logRequestBody(options.path, options.data, source: 'Dio');
 
             String? token = await Preferences.getToken();
+            logToken(token, source: 'Dio');
             if (token != null && token.isNotEmpty) {
               options.headers['Authorization'] = 'Bearer $token';
             }
@@ -79,6 +85,7 @@ class Api {
       final requestBody = {'mobile': username, 'password': password};
       logApiHit('POST', url.toString(), source: 'Login');
       logRequestBody(url.toString(), requestBody, source: 'Login');
+      logToken(await Preferences.getToken(), source: 'Login');
 
       final response = await http.post(
         url,
@@ -98,13 +105,41 @@ class Api {
           if (userData.containsKey('token') && userData['token'] != null) {
             String token = userData['token'];
             String name = userData['name'] ?? 'Unknown';
+            int? id = int.tryParse(userData['id']?.toString() ?? '');
+            bool isMaster = userData['isMaster'] == true;
+            String mobile = userData['mobile']?.toString() ?? '';
+            final godowns = (userData['godowns'] is List)
+                ? (userData['godowns'] as List)
+                      .whereType<Map>()
+                      .map((g) => Map<String, dynamic>.from(g))
+                      .toList()
+                : <Map<String, dynamic>>[];
+            final godownIds = (userData['godownIds'] is List)
+                ? (userData['godownIds'] as List)
+                      .map((e) => int.tryParse(e.toString()))
+                      .whereType<int>()
+                      .toList()
+                : <int>[];
 
             await Preferences.saveToken(token);
             await Preferences.saveUserName(name);
+            if (id != null) await Preferences.saveUserId(id);
+            await Preferences.saveIsMaster(isMaster);
+            await Preferences.saveMobile(mobile);
+            await Preferences.saveGodowns(godowns);
+            await Preferences.saveGodownIds(godownIds);
 
             return {
               'success': true,
-              'data': {'token': token, 'name': name},
+              'data': {
+                'token': token,
+                'name': name,
+                'id': id,
+                'isMaster': isMaster,
+                'mobile': mobile,
+                'godowns': godowns,
+                'godownIds': godownIds,
+              },
             };
           } else {
             return {
@@ -267,6 +302,13 @@ class Api {
                 }
                 return list;
               });
+
+          final isMaster = await Preferences.getIsMaster();
+          if (!isMaster) {
+            final allowedIds = (await Preferences.getGodownIds()).toSet();
+            locations.retainWhere((location) => allowedIds.contains(location.id));
+          }
+
           locations.sort((a, b) => a.name.compareTo(b.name));
           print(
             'Godown parsed list: ${locations.map((e) => {'id': e.id, 'name': e.name, 'availableQty': e.availableQty}).toList()}',
@@ -291,10 +333,16 @@ class Api {
       final body = {"itemId": itemId.toString()};
       logApiHit('POST', url, source: 'ItemDetailScreen');
       logRequestBody(url, body, source: 'ItemDetailScreen');
+      final token = await Preferences.getToken();
+      logToken(token, source: 'ItemDetailScreen');
       final response = await http.post(
         Uri.parse(url),
         body: json.encode(body),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null && token.isNotEmpty)
+            'Authorization': 'Bearer $token',
+        },
       );
 
       print('Item detail response: ${response.body}');
@@ -319,6 +367,7 @@ class Api {
     try {
       logApiHit('POST', url.toString(), source: 'SearchItems');
       logRequestBody(url.toString(), requestBody, source: 'SearchItems');
+      logToken(await Preferences.getToken(), source: 'SearchItems');
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
@@ -359,20 +408,12 @@ class Api {
       logApiHit('POST', url, source: 'AddItem');
       logRequestBody(url, requestBody, source: 'AddItem');
 
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json', // Ensure correct content type
-        },
-        body: json.encode(requestBody), // Encode the body to JSON
-      );
+      final response = await client!.post(url, data: requestBody);
 
       print("RESP INSEERT ${response}");
 
       if (response.statusCode == 200) {
-        Map<String, dynamic> responseData = json.decode(
-          response.body,
-        ); // Decode the response body
+        Map<String, dynamic> responseData = response.data;
 
         if (responseData['errorStatus'] == false) {
           return {'errorStatus': false, 'data': responseData['data']};
@@ -406,14 +447,10 @@ class Api {
       logApiHit('POST', url, source: 'AddCategory');
       logRequestBody(url, requestBody, source: 'AddCategory');
 
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(requestBody),
-      );
+      final response = await client!.post(url, data: requestBody);
 
       if (response.statusCode == 200) {
-        Map<String, dynamic> responseData = json.decode(response.body);
+        Map<String, dynamic> responseData = response.data;
 
         if (responseData['errorStatus'] == false) {
           return {'errorStatus': false, 'data': responseData['data']};

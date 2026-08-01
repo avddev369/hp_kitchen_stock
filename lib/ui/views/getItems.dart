@@ -10,6 +10,7 @@ import 'package:klitchen_stock/ui/models/items/filterItems.dart';
 import 'package:klitchen_stock/ui/views/showitemsDetails.dart'
     show ItemDetailScreen;
 import 'package:klitchen_stock/widgets/customAlertDialog.dart';
+import '../../helper/preferences.dart';
 import '../../widgets/addDialogbox.dart';
 import '../../utils/search_utils.dart';
 
@@ -41,11 +42,36 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _isMaster = true;
+  Set<String> _allowedGodowns = {};
 
   @override
   void initState() {
     super.initState();
+    _loadGodownAccess();
     getItems();
+  }
+
+  Future<void> _loadGodownAccess() async {
+    final isMaster = await Preferences.getIsMaster();
+    final godowns = await Preferences.getGodowns();
+    if (!mounted) return;
+    setState(() {
+      _isMaster = isMaster;
+      _allowedGodowns = godowns
+          .map((g) => _normalizeGodownKey((g['godown_name'] ?? '').toString()))
+          .where((name) => name.isNotEmpty)
+          .toSet();
+    });
+  }
+
+  List<FilterItem> get _accessibleItems {
+    if (_isMaster) return _fc.filteredItems.toList();
+    return _fc.filteredItems
+        .where(
+          (item) => _allowedGodowns.contains(_normalizeGodownKey(item.location)),
+        )
+        .toList();
   }
 
   getItems() async {
@@ -68,10 +94,10 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
 
   List<FilterItem> get _visibleItems {
     if (_searchQuery.trim().isEmpty) {
-      return _fc.filteredItems.toList();
+      return _accessibleItems;
     }
 
-    return _fc.filteredItems.where((item) {
+    return _accessibleItems.where((item) {
       return matchesSearchQuery(_searchQuery, [
         item.engName,
         item.gujName,
@@ -273,7 +299,7 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
   }
 
   Widget _buildItemCard(BuildContext context, FilterItem item) {
-    final godownStock = _fc.filteredItems
+    final godownStock = _accessibleItems
         .where((candidate) => candidate.itemId == item.itemId)
         .where((candidate) => candidate.location.trim().isNotEmpty)
         .fold<Map<String, num>>({}, (stock, candidate) {
@@ -301,7 +327,17 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
-          onTap: () {
+          onTap: () async {
+            if (item.qty <= 0) {
+              await CustomAlertDialog.showErrorDialog(
+                context,
+                'No stock available for ${item.engName}. Please add ${item.engName} first.',
+                autoCloseDuration: const Duration(seconds: 3),
+                animationAsset: 'assets/alert.json',
+              );
+              return;
+            }
+
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -403,6 +439,16 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
                       label: 'Use',
                       icon: Icons.remove_rounded,
                       onTap: () async {
+                        if (item.qty <= 0) {
+                          await CustomAlertDialog.showErrorDialog(
+                            context,
+                            'There is 0 ${item.unit} ${item.engName}. Add ${item.engName}',
+                            autoCloseDuration: const Duration(seconds: 3),
+                            animationAsset: 'assets/alert.json',
+                          );
+                          return;
+                        }
+
                         final didUpdate = await showRemoveItemDialog(
                           context,
                           item.itemId,

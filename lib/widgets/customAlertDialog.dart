@@ -3,31 +3,36 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
 class CustomAlertDialog {
   // Function to show a simple error dialog with an icon and text
-  static Future<void> showErrorDialog(BuildContext context, String message) {
+  static Future<void> showErrorDialog(
+    BuildContext context,
+    String message, {
+    Duration autoCloseDuration = const Duration(seconds: 1),
+    String animationAsset = 'assets/error.json',
+  }) {
     return showDialog(
       context: context,
       barrierDismissible:
           true, // Allows dismissing the dialog by tapping outside
       builder: (BuildContext context) {
-        Future.delayed(Duration(seconds: 1), () {
+        Future.delayed(autoCloseDuration, () {
           if (Navigator.canPop(context)) {
-            Navigator.of(context).pop(); // Close the dialog after 1 second
+            Navigator.of(context).pop(); // Close the dialog automatically
           }
         });
         return AlertDialog(
-          backgroundColor:
-              Colors.white, // Transparent black background
+          backgroundColor: Colors.white, // Transparent black background
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-             // SvgPicture.asset('assets/select.svg',height: 100,),
+              // SvgPicture.asset('assets/select.svg',height: 100,),
               SizedBox(
                 //height:250,
-               width: 300,
+                width: 300,
                 child: Lottie.asset(
-                  'assets/error.json', // Path to your Lottie file
+                  animationAsset, // Path to your Lottie file
                   fit: BoxFit.fitWidth,
                   repeat: true,
                 ),
@@ -47,12 +52,16 @@ class CustomAlertDialog {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context)
-                    .pop(); // Close the dialog immediately if 'OK' is pressed
+                Navigator.of(
+                  context,
+                ).pop(); // Close the dialog immediately if 'OK' is pressed
               },
               child: Text(
                 'OK',
-                style: TextStyle(color: Colors.blue,fontWeight: FontWeight.w900),
+                style: TextStyle(
+                  color: Colors.blue,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ),
           ],
@@ -65,7 +74,8 @@ class CustomAlertDialog {
   static Future<void> showSuccessDialog(BuildContext context, String message) {
     return showDialog(
       context: context,
-      barrierDismissible: true, // Allows dismissing the dialog by tapping outside
+      barrierDismissible:
+          true, // Allows dismissing the dialog by tapping outside
       builder: (BuildContext context) {
         Future.delayed(Duration(milliseconds: 500), () {
           if (Navigator.canPop(context)) {
@@ -77,7 +87,10 @@ class CustomAlertDialog {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 20,
+            horizontal: 20,
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
@@ -123,9 +136,12 @@ class CustomAlertDialog {
       },
     );
   }
+
   // Function to show a selection dialog with an icon and text
   static Future<void> showSelectionDialog(
-      BuildContext context, String message) {
+    BuildContext context,
+    String message,
+  ) {
     return showDialog(
       context: context,
       barrierDismissible:
@@ -149,10 +165,7 @@ class CustomAlertDialog {
               SizedBox(height: 20),
               Text(
                 message,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                ),
+                style: TextStyle(color: Colors.white, fontSize: 18),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -160,13 +173,11 @@ class CustomAlertDialog {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context)
-                    .pop(); // Close the dialog immediately if 'OK' is pressed
+                Navigator.of(
+                  context,
+                ).pop(); // Close the dialog immediately if 'OK' is pressed
               },
-              child: Text(
-                'OK',
-                style: TextStyle(color: Colors.white),
-              ),
+              child: Text('OK', style: TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -186,8 +197,7 @@ class CustomAlertDialog {
         //   }
         // });
         return AlertDialog(
-          backgroundColor:
-              Colors.white, // Transparent black background
+          backgroundColor: Colors.white, // Transparent black background
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
@@ -217,12 +227,15 @@ class CustomAlertDialog {
                     backgroundColor: Colors.red, // Button background color
                     padding: EdgeInsets.all(8.0), // Button padding
                     shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(8.0), // Rounded corners
+                      borderRadius: BorderRadius.circular(
+                        8.0,
+                      ), // Rounded corners
                     ),
                     elevation: 0, // Remove button's default elevation
-                    minimumSize:
-                        Size(80, 40), // Width and height for the button
+                    minimumSize: Size(
+                      80,
+                      40,
+                    ), // Width and height for the button
                   ),
                   onPressed: () async {},
                   child: Text(
@@ -237,12 +250,15 @@ class CustomAlertDialog {
                     backgroundColor: Colors.indigo, // Button background color
                     padding: EdgeInsets.all(8.0), // Button padding
                     shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(8.0), // Rounded corners
+                      borderRadius: BorderRadius.circular(
+                        8.0,
+                      ), // Rounded corners
                     ),
                     elevation: 0, // Remove button's default elevation
-                    minimumSize:
-                        Size(80, 40), // Width and height for the button
+                    minimumSize: Size(
+                      80,
+                      40,
+                    ), // Width and height for the button
                   ),
                   onPressed: () {
                     Get.back();
@@ -291,7 +307,8 @@ class CustomAlertDialog {
               Expanded(
                 child: Text(
                   title,
-                  style: titleStyle ??
+                  style:
+                      titleStyle ??
                       GoogleFonts.robotoCondensed(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -303,13 +320,12 @@ class CustomAlertDialog {
           ),
           content: Text(
             content,
-            style: contentStyle ??
-                GoogleFonts.robotoCondensed(
-                  fontSize: 16,
-                  color: Colors.black,
-                ),
+            style:
+                contentStyle ??
+                GoogleFonts.robotoCondensed(fontSize: 16, color: Colors.black),
           ),
-          actions: actions ??
+          actions:
+              actions ??
               [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
